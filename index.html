@@ -731,7 +731,7 @@ const field = (id, labelText, control, hint) => h("div", { class: "field" }, h("
 async function viewEssays() {
   const [list, qs, themes] = await Promise.all([api.essays(), api.weekly(1).catch(() => []), api.themes().catch(() => [])]);
   const head = h("div", { class: "head" },
-    h("div", null, h("h1", null, "Essays"), h("p", null, "Long, signed and finished. Grouped by subject, each one a part of J.G. Ballard’s ground.")),
+    h("div", null, h("h1", null, "Essays"), h("p", null, "Grouped by subject, each one a part of J.G. Ballard’s ground.")),
     api.me() ? h("div", { class: "row" }, h("a", { class: "btn", href: "#write" }, "Write an essay"), canWrite() ? h("a", { class: "btn ghost", href: "#share" }, "Share from Substack") : null) : null);
   const item = e => h("li", null,
     h("a", { class: "t", href: "#essay-" + e.slug }, h("h2", null, e.title)),
