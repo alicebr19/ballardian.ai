@@ -688,7 +688,7 @@ function weeklyBlock(t, mode) {        // mode: "lead" (top of Essays and the we
     h("blockquote", null, t.quote.trim()),
     h("p", { class: "qsrc" }, by),
     t.link_url ? h("p", { style: "margin:0 0 12px" }, outLink(t.link_url, "The story on " + hostOf(t.link_url) + " →", "readmore")) : null,
-    t.body && mode !== "list" ? withTweets(h("div", { class: "prose small", html: md(t.body) })) : null,
+    t.body ? withTweets(h("div", { class: "prose small", html: md(t.body) })) : null,
     mode === "list" ? null : h("p", { class: "qcall" }, "How does this apply now? Reply in the thread, or answer at length with an essay."),
     h("p", { class: "more" },
       mode === "page" ? null : h("a", { class: "btn small" + (lead ? " light" : ""), href: "#thread-" + t.id }, n ? "Reply in the thread →" : "Be the first to reply →"),
