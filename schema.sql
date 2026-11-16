@@ -41,11 +41,20 @@ alter table public.essays add column if not exists cover_url text check (cover_u
 alter table public.essays add column if not exists source_author text check (source_author is null or char_length(source_author) <= 120);
 alter table public.essays add column if not exists source_words int check (source_words is null or source_words between 0 and 1000000);
 alter table public.essays add column if not exists source_date timestamptz;
-do $$ begin
-  if not exists (select 1 from pg_constraint where conname = 'essays_kind_matches_link') then
-    alter table public.essays add constraint essays_kind_matches_link check ((kind = 'essay' and external_url is null) or (kind = 'substack' and external_url is not null));
-  end if;
-end $$;
+-- Entries can also point at writing on other sites ('link'), carry the name of the publication,
+-- and be added from the dashboard without a member account (author_id empty).
+alter table public.essays alter column author_id drop not null;
+alter table public.essays add column if not exists source_name text;
+alter table public.essays drop constraint if exists essays_source_name_check;
+alter table public.essays add constraint essays_source_name_check check (source_name is null or char_length(source_name) <= 80);
+alter table public.essays drop constraint if exists essays_kind_check;
+alter table public.essays add constraint essays_kind_check check (kind in ('essay','substack','link'));
+alter table public.essays drop constraint if exists essays_external_url_check;
+alter table public.essays add constraint essays_external_url_check check (external_url is null or (external_url ~ '^https://[A-Za-z0-9.-]+(/[^[:space:]"<>]*)?$' and char_length(external_url) <= 500));
+alter table public.essays drop constraint if exists essays_cover_url_check;
+alter table public.essays add constraint essays_cover_url_check check (cover_url is null or (cover_url ~ '^https://(substackcdn\.com|substack-post-media\.s3\.amazonaws\.com|images\.squarespace-cdn\.com)/' and char_length(cover_url) <= 1000));
+alter table public.essays drop constraint if exists essays_kind_matches_link;
+alter table public.essays add constraint essays_kind_matches_link check ((kind = 'essay' and external_url is null) or (kind <> 'essay' and external_url is not null));
 create unique index if not exists essays_external_url_key on public.essays (external_url) where external_url is not null;
 
 create table if not exists public.threads (
@@ -61,6 +70,22 @@ create table if not exists public.threads (
 );
 create index if not exists threads_created_idx on public.threads (created_at desc);
 
+-- Ballard this week: an admin posts a line of his against the week's news as a special thread
+-- (kind 'weekly'). It carries the quotation, where it is from, and a link to the news story;
+-- the thread's body is the question put to readers, and their takes are ordinary replies.
+alter table public.threads add column if not exists kind text not null default 'thread';
+alter table public.threads drop constraint if exists threads_kind_check;
+alter table public.threads add constraint threads_kind_check check (kind in ('thread','weekly'));
+alter table public.threads add column if not exists quote text;
+alter table public.threads add column if not exists quote_source text;
+alter table public.threads add column if not exists link_url text;
+alter table public.threads drop constraint if exists threads_weekly_check;
+alter table public.threads add constraint threads_weekly_check check (
+  (kind = 'thread' and quote is null and quote_source is null and link_url is null) or
+  (kind = 'weekly' and quote is not null and char_length(quote) between 1 and 1500 and (quote_source is null or char_length(quote_source) <= 200)
+     and (link_url is null or (link_url ~ '^https://[A-Za-z0-9.-]+(/[^[:space:]"<>]*)?$' and char_length(link_url) <= 500))));
+create index if not exists threads_weekly_idx on public.threads (created_at desc) where kind = 'weekly';
+
 -- A thread can point at one post on X; the page shows it above the discussion.
 alter table public.threads add column if not exists tweet_url text check (tweet_url is null or tweet_url ~ '^https://x\.com/[A-Za-z0-9_]{1,15}/status/[0-9]{1,25}$');
 
@@ -74,6 +99,14 @@ create table if not exists public.replies (
   created_at timestamptz not null default now()
 );
 create index if not exists replies_thread_idx on public.replies (thread_id, created_at);
+
+-- Optional links a member can show beside their name.
+alter table public.profiles add column if not exists linkedin_url text;
+alter table public.profiles add column if not exists substack_url text;
+alter table public.profiles drop constraint if exists profiles_linkedin_url_check;
+alter table public.profiles add constraint profiles_linkedin_url_check check (linkedin_url is null or linkedin_url ~ '^https://(www\.)?linkedin\.com/in/[A-Za-z0-9_%-]{1,100}/?$');
+alter table public.profiles drop constraint if exists profiles_substack_url_check;
+alter table public.profiles add constraint profiles_substack_url_check check (substack_url is null or (substack_url ~ '^https://[A-Za-z0-9.-]+/?$' and char_length(substack_url) <= 200));
 
 create table if not exists public.thread_votes (
   user_id   uuid not null default auth.uid() references public.profiles on delete cascade,
@@ -231,10 +264,11 @@ revoke all on public.site_admins, public.profiles, public.essays, public.threads
               public.thread_votes, public.reply_votes, public.subscribers from anon, authenticated;
 
 grant select on public.profiles, public.essays, public.threads, public.replies to anon, authenticated;
-grant update (handle, display_name, bio) on public.profiles to authenticated;
-grant insert (slug, title, subtitle, body, status, kind, external_url, cover_url, source_author, source_words, source_date),
-      update (title, subtitle, body, status, external_url, cover_url, source_author, source_words, source_date), delete on public.essays to authenticated;
-grant insert (title, body, topic, essay_slug, tweet_url), delete on public.threads to authenticated;
+grant update (handle, display_name, bio, linkedin_url, substack_url) on public.profiles to authenticated;
+grant insert (slug, title, subtitle, body, status, kind, external_url, cover_url, source_author, source_name, source_words, source_date),
+      update (title, subtitle, body, status, external_url, cover_url, source_author, source_name, source_words, source_date), delete on public.essays to authenticated;
+grant insert (title, body, topic, essay_slug, tweet_url, kind, quote, quote_source, link_url),
+      update (title, body, quote, quote_source, link_url), delete on public.threads to authenticated;   -- update is limited to admins by the rule below
 grant insert (thread_id, parent_id, body), delete on public.replies to authenticated;
 grant select, insert, update, delete on public.thread_votes, public.reply_votes to authenticated;
 grant select on public.subscribers to authenticated;      -- rows limited to admins by the rule below
@@ -263,14 +297,16 @@ create policy "read published essays and own drafts" on public.essays for select
 drop policy if exists "writers add essays" on public.essays;
 create policy "writers add essays" on public.essays for insert to authenticated with check (author_id = auth.uid() and public.is_writer());
 drop policy if exists "writers edit own essays" on public.essays;
-create policy "writers edit own essays" on public.essays for update to authenticated using (author_id = auth.uid() and public.is_writer()) with check (author_id = auth.uid());
+create policy "writers edit own essays" on public.essays for update to authenticated using ((author_id = auth.uid() and public.is_writer()) or public.is_admin()) with check (author_id = auth.uid() or public.is_admin());
 drop policy if exists "remove own essays, admins any" on public.essays;
 create policy "remove own essays, admins any" on public.essays for delete to authenticated using (author_id = auth.uid() or public.is_admin());
 
 drop policy if exists "threads are public" on public.threads;
 create policy "threads are public" on public.threads for select using (true);
 drop policy if exists "members start threads" on public.threads;
-create policy "members start threads" on public.threads for insert to authenticated with check (author_id = auth.uid());
+create policy "members start threads" on public.threads for insert to authenticated with check (author_id = auth.uid() and (kind = 'thread' or public.is_admin()));
+drop policy if exists "admins edit the weekly post" on public.threads;
+create policy "admins edit the weekly post" on public.threads for update to authenticated using (kind = 'weekly' and public.is_admin()) with check (kind = 'weekly' and public.is_admin());
 drop policy if exists "remove own threads, admins any" on public.threads;
 create policy "remove own threads, admins any" on public.threads for delete to authenticated using (author_id = auth.uid() or public.is_admin());
 
@@ -288,3 +324,4 @@ create policy "own reply votes" on public.reply_votes for all to authenticated u
 
 drop policy if exists "admins read subscribers" on public.subscribers;
 create policy "admins read subscribers" on public.subscribers for select to authenticated using (public.is_admin());
+

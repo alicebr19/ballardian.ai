@@ -6,6 +6,7 @@ Essays, threads and a page on the life and work of J.G. Ballard.
 - `collage.jpg` is the background, composed from Ballard book jackets.
 - `schema.sql` is the database: tables, access rules and triggers for Supabase.
 - `CNAME` tells GitHub Pages to serve the site at ballardian.ai.
+- `seed.sql` holds the first entries on the Essays tab (links to writing on beaballard.com and Substack).
 - `supabase/functions/unfurl/index.ts` fetches a Substack essay's title, author and cover when a writer shares one.
 
 ## How it runs
@@ -28,6 +29,10 @@ Nothing is copied across.
 
 A thread can point at a post on X, shown at the top of the thread, and any link to a
 post on X in a thread or reply is shown as the post itself.
+
+Ballard this week: an admin posts a line of J.G. Ballard's against the week's news, with a
+link to the story and a question for readers. It sits at the top of the Essays tab and is
+pinned in Threads, and readers reply with their take.
 
 Sign-in is by emailed link. Signing in with X, or linking an X account afterwards,
 is optional and shows the member's X handle beside their name.
