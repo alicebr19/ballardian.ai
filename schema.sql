@@ -34,6 +34,20 @@ create table if not exists public.essays (
 );
 create index if not exists essays_published_idx on public.essays (published_at desc) where status = 'published';
 
+-- Essays shared from Substack: the entry carries the link and its details, not the text.
+alter table public.essays add column if not exists kind text not null default 'essay' check (kind in ('essay','substack'));
+alter table public.essays add column if not exists external_url text check (external_url is null or (external_url ~ '^https://[A-Za-z0-9.-]+/p/[A-Za-z0-9%_-]+$' and char_length(external_url) <= 300));
+alter table public.essays add column if not exists cover_url text check (cover_url is null or (cover_url ~ '^https://(substackcdn\.com|substack-post-media\.s3\.amazonaws\.com)/' and char_length(cover_url) <= 1000));
+alter table public.essays add column if not exists source_author text check (source_author is null or char_length(source_author) <= 120);
+alter table public.essays add column if not exists source_words int check (source_words is null or source_words between 0 and 1000000);
+alter table public.essays add column if not exists source_date timestamptz;
+do $$ begin
+  if not exists (select 1 from pg_constraint where conname = 'essays_kind_matches_link') then
+    alter table public.essays add constraint essays_kind_matches_link check ((kind = 'essay' and external_url is null) or (kind = 'substack' and external_url is not null));
+  end if;
+end $$;
+create unique index if not exists essays_external_url_key on public.essays (external_url) where external_url is not null;
+
 create table if not exists public.threads (
   id          uuid primary key default gen_random_uuid(),
   author_id   uuid not null default auth.uid() references public.profiles on delete cascade,
@@ -46,6 +60,9 @@ create table if not exists public.threads (
   created_at  timestamptz not null default now()
 );
 create index if not exists threads_created_idx on public.threads (created_at desc);
+
+-- A thread can point at one post on X; the page shows it above the discussion.
+alter table public.threads add column if not exists tweet_url text check (tweet_url is null or tweet_url ~ '^https://x\.com/[A-Za-z0-9_]{1,15}/status/[0-9]{1,25}$');
 
 create table if not exists public.replies (
   id         uuid primary key default gen_random_uuid(),
@@ -150,7 +167,7 @@ begin
   if btrim(new.body) = '' then new.word_count := 0; end if;
   new.excerpt := left(btrim(regexp_replace(regexp_replace(regexp_replace(regexp_replace(new.body, '(^|\n)(#{1,3} [^\n]*|-{3,})', '\1', 'g'), '\[([^\]]+)\]\([^)]+\)', '\1', 'g'), '[#>*_`]', '', 'g'), '\s+', ' ', 'g')), 220);
   if new.status = 'published' and new.published_at is null then new.published_at := now(); end if;
-  if tg_op = 'UPDATE' then new.author_id := old.author_id; new.slug := old.slug; new.created_at := old.created_at; end if;
+  if tg_op = 'UPDATE' then new.author_id := old.author_id; new.slug := old.slug; new.created_at := old.created_at; new.kind := old.kind; end if;
   return new;
 end $$;
 drop trigger if exists essay_before_write on public.essays;
@@ -215,8 +232,9 @@ revoke all on public.site_admins, public.profiles, public.essays, public.threads
 
 grant select on public.profiles, public.essays, public.threads, public.replies to anon, authenticated;
 grant update (handle, display_name, bio) on public.profiles to authenticated;
-grant insert (slug, title, subtitle, body, status), update (title, subtitle, body, status), delete on public.essays to authenticated;
-grant insert (title, body, topic, essay_slug), delete on public.threads to authenticated;
+grant insert (slug, title, subtitle, body, status, kind, external_url, cover_url, source_author, source_words, source_date),
+      update (title, subtitle, body, status, external_url, cover_url, source_author, source_words, source_date), delete on public.essays to authenticated;
+grant insert (title, body, topic, essay_slug, tweet_url), delete on public.threads to authenticated;
 grant insert (thread_id, parent_id, body), delete on public.replies to authenticated;
 grant select, insert, update, delete on public.thread_votes, public.reply_votes to authenticated;
 grant select on public.subscribers to authenticated;      -- rows limited to admins by the rule below

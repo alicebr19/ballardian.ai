@@ -6,6 +6,7 @@ Essays, threads and a page on the life and work of J.G. Ballard.
 - `collage.jpg` is the background, composed from Ballard book jackets.
 - `schema.sql` is the database: tables, access rules and triggers for Supabase.
 - `CNAME` tells GitHub Pages to serve the site at ballardian.ai.
+- `supabase/functions/unfurl/index.ts` fetches a Substack essay's title, author and cover when a writer shares one.
 
 ## How it runs
 
@@ -20,6 +21,13 @@ Who can do what is enforced in the database, not in the page:
 - Signed-in members can start threads, reply and vote.
 - Writers can publish essays. Admins make members into writers from the account page.
 - Admins can remove any post.
+
+Writers can also share an essay that lives on Substack: they paste its address, the
+details are filled in, and the entry on the Essays tab opens the essay on Substack.
+Nothing is copied across.
+
+A thread can point at a post on X, shown at the top of the thread, and any link to a
+post on X in a thread or reply is shown as the post itself.
 
 Sign-in is by emailed link. Signing in with X, or linking an X account afterwards,
 is optional and shows the member's X handle beside their name.

@@ -183,6 +183,12 @@ textarea { min-height: 120px; resize: vertical; line-height: 1.5; }
 .years-list i { font-style: italic; }
 .years-list.books li { grid-template-columns: 3.4em 1fr; padding: 5px 0; }
 
+/* About */
+.about { max-width: 34em; margin-top: 26px; }
+.about .lede { font-size: 23px; line-height: 1.42; margin: 0 0 1em; }
+.about p { margin: 0 0 1em; }
+.about a { text-decoration-color: var(--signal); text-decoration-thickness: 2px; text-underline-offset: 3px; }
+
 /* Account */
 .panel { border-top: 3px solid var(--ink); padding-top: 18px; margin-top: 34px; }
 .panel > h2 { font-stretch: 88%; font-weight: 700; font-size: 22px; margin-bottom: 12px; }
@@ -194,13 +200,25 @@ table.plain th { font-family: var(--mono); font-size: 11.5px; letter-spacing: .0
 .scroll { overflow-x: auto; }
 select { background: #fff; border: 1.5px solid var(--ink); padding: 5px 8px; font-family: var(--mono); font-size: 13px; border-radius: 0; }
 
+/* Substack shares and posts from X */
+.cover { display: block; width: 100%; max-height: 420px; object-fit: cover; border: 1px solid var(--line); margin: 0 0 26px; background: var(--paper-2); }
+.btn.big { font-size: 15px; padding: 14px 22px; }
+.tag.src { background: var(--sodium); border-color: var(--sodium); color: #fff; cursor: default; }
+.tag.x { cursor: default; }
+.xpost { margin: 14px 0 4px; max-width: 550px; display: flow-root; }
+.xpost .twitter-tweet { margin: 0 !important; float: none !important; }
+.xpost-fallback { display: block; border: 1.5px solid var(--ink); padding: 12px 14px; font-family: var(--mono); font-size: 13px; text-decoration: none; background: #fff; }
+.xpost-fallback:hover { background: var(--ink); color: #fff; }
+.fetchrow { display: flex; flex-wrap: wrap; gap: 10px; }
+.fetchrow input { flex: 1 1 280px; width: auto; }
+
 .foot { padding: 26px 0 60px; }
 .foot p { display: inline-block; background: var(--ink); color: #fff; font-family: var(--mono); font-size: 12px; padding: 8px 12px; margin: 0; }
 .foot a { color: #fff; }
 
 @media (max-width: 720px) {
   .jgb { grid-template-columns: 1fr; }
-  .tab { padding: 11px 11px 9px; font-size: 11.5px; letter-spacing: .06em; }
+  .tab { padding: 11px 9px 9px; font-size: 11px; letter-spacing: .04em; }
   .tab[aria-current="page"] { padding-bottom: 13px; }
   body { font-size: 17px; }
   .prose { font-size: 19px; }
@@ -222,11 +240,12 @@ select { background: #fff; border: 1.5px solid var(--ink); padding: 5px 8px; fon
     <a class="tab" href="#essays" data-tab="essays">Essays</a>
     <a class="tab" href="#threads" data-tab="threads">Threads</a>
     <a class="tab" href="#ballard" data-tab="ballard">J.G. Ballard</a>
+    <a class="tab" href="#about" data-tab="about">About</a>
     <a class="tab right" href="#account" data-tab="account" id="acct-tab">Sign in</a>
   </nav>
   <p class="notice" id="notice" hidden></p>
   <main class="paper" id="view" aria-live="polite"><p class="empty">Loading.</p></main>
-  <footer class="foot"><p>Ballardian &middot; <a href="#ballard">J.G. Ballard, 1930&ndash;2009</a></p></footer>
+  <footer class="foot"><p>Ballardian &middot; <a href="#ballard">J.G. Ballard, 1930&ndash;2009</a> &middot; <a href="#about">About</a></p></footer>
 </div>
 
 <script>
@@ -311,6 +330,39 @@ function ago(d) {
 const slugify = s => String(s).toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 70) || "essay";
 const uid = () => (crypto.randomUUID ? crypto.randomUUID() : "id-" + Math.random().toString(16).slice(2) + Date.now().toString(16));
 const siteBase = () => location.origin + location.pathname;
+/* Posts on X: recognise a link, show the post itself, fall back to a plain link if X's script is blocked. */
+const TWEET_RE = /https?:\/\/(?:www\.|mobile\.)?(?:x|twitter)\.com\/([A-Za-z0-9_]{1,15})\/status(?:es)?\/(\d{1,25})/;
+function parseTweet(u) { const m = String(u || "").match(TWEET_RE); return m ? { user: m[1], id: m[2], url: "https://x.com/" + m[1] + "/status/" + m[2] } : null; }
+let xScript = null;
+function loadX() {
+  return xScript || (xScript = new Promise((res, rej) => {
+    const s = document.createElement("script"); s.src = "https://platform.twitter.com/widgets.js"; s.async = true;
+    s.onload = () => (window.twttr && window.twttr.ready ? window.twttr.ready(res) : rej(new Error("X did not load")));
+    s.onerror = () => rej(new Error("X did not load")); document.head.append(s);
+  }));
+}
+function tweetEmbed(t) {
+  const link = h("a", { class: "xpost-fallback", href: t.url, target: "_blank", rel: "noopener" }, "Post by @" + t.user + " on X →");
+  const box = h("div", { class: "xpost" }, link);
+  loadX().then(tw => tw.widgets.createTweet(t.id, box, { dnt: true, conversation: "none" })).then(el => { if (el) link.remove(); }).catch(() => {});
+  return box;
+}
+function withTweets(el, skipId) {           // show up to two posts linked in a piece of writing
+  const seen = new Set(skipId ? [skipId] : []); let n = 0;
+  for (const a of [...el.querySelectorAll("a[href]")]) { const t = parseTweet(a.getAttribute("href")); if (!t || seen.has(t.id) || n >= 2) continue; seen.add(t.id); n++; el.append(tweetEmbed(t)); }
+  return el;
+}
+/* Substack: tidy a pasted address down to https://<site>/p/<slug>. */
+function parseSubstack(input) {
+  let u; try { u = new URL(String(input || "").trim()); } catch (e) { throw new Error("Paste the essay's web address."); }
+  let host = u.hostname.toLowerCase(), path = u.pathname;
+  const open = host === "open.substack.com" && path.match(/^\/pub\/([a-z0-9-]+)(\/p\/.+)$/i);
+  if (open) { host = open[1].toLowerCase() + ".substack.com"; path = open[2]; }
+  const m = path.match(/^\/p\/([A-Za-z0-9%_-]{1,200})\/?$/);
+  if (u.protocol !== "https:" || !/^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(host) || !m) throw new Error("Use the essay's own address, the one with /p/ in it, such as https://name.substack.com/p/title.");
+  return "https://" + host + "/p/" + m[1];
+}
+const hostOf = u => { try { return new URL(u).hostname.replace(/^www\./, ""); } catch (e) { return ""; } };
 const shareUrl = (text, hash) => "https://x.com/intent/post?text=" + encodeURIComponent(text) + "&url=" + encodeURIComponent(siteBase() + "#" + hash);
 
 /* =====================================================================
@@ -328,10 +380,10 @@ function previewApi() {
   const prof = id => { const p = db.profiles[id]; return p ? { handle: p.handle, display_name: p.display_name, x_handle: p.x_handle, avatar_url: null } : { handle: "gone", display_name: "Deleted" }; };
   const meP = () => (db.me ? db.profiles[db.me] : null);
   const need = () => { const p = meP(); if (!p) throw new Error("Sign in first."); return p; };
-  const essayOut = (e, full) => ({ id: e.id, slug: e.slug, title: e.title, subtitle: e.subtitle, status: e.status, published_at: e.published_at, updated_at: e.updated_at, word_count: words(e.body), excerpt: plain(e.body).slice(0, 220), author_id: e.author_id, author: prof(e.author_id), sample: !!e.sample, body: full ? e.body : undefined });
+  const essayOut = (e, full) => ({ id: e.id, slug: e.slug, title: e.title, subtitle: e.subtitle, status: e.status, published_at: e.published_at, updated_at: e.updated_at, word_count: words(e.body), excerpt: plain(e.body).slice(0, 220), author_id: e.author_id, author: prof(e.author_id), sample: !!e.sample, body: full ? e.body : undefined, kind: e.kind || "essay", external_url: e.external_url || null, cover_url: e.cover_url || null, source_author: e.source_author || null, source_words: e.source_words || null, source_date: e.source_date || null });
   const tScore = id => Object.entries(db.tvotes).reduce((n, [k, v]) => n + (k.endsWith("|" + id) ? v : 0), 0) + ((db.threads.find(t => t.id === id) || {}).base || 0);
   const rScore = id => Object.entries(db.rvotes).reduce((n, [k, v]) => n + (k.endsWith("|" + id) ? v : 0), 0) + ((db.replies.find(r => r.id === id) || {}).base || 0);
-  const threadOut = t => ({ id: t.id, title: t.title, body: t.body, topic: t.topic, essay_slug: t.essay_slug, created_at: t.created_at, author_id: t.author_id, author: prof(t.author_id), sample: !!t.sample, score: tScore(t.id), reply_count: db.replies.filter(r => r.thread_id === t.id).length, my_vote: db.me ? db.tvotes[db.me + "|" + t.id] || 0 : 0 });
+  const threadOut = t => ({ id: t.id, title: t.title, body: t.body, topic: t.topic, essay_slug: t.essay_slug, tweet_url: t.tweet_url || null, created_at: t.created_at, author_id: t.author_id, author: prof(t.author_id), sample: !!t.sample, score: tScore(t.id), reply_count: db.replies.filter(r => r.thread_id === t.id).length, my_vote: db.me ? db.tvotes[db.me + "|" + t.id] || 0 : 0 });
   return {
     mode: "preview",
     async init(cb) { listener = cb; },
@@ -359,8 +411,9 @@ function previewApi() {
     async myEssays() { return db.essays.filter(e => e.author_id === db.me).sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at)).map(e => essayOut(e)); },
     async saveEssay(f) {
       const p = need(); const now = new Date().toISOString(); let e = f.id && db.essays.find(x => x.id === f.id && x.author_id === p.id);
-      if (!e) { let slug = slugify(f.title); while (db.essays.some(x => x.slug === slug)) slug += "-" + Math.random().toString(36).slice(2, 5); e = { id: uid(), slug, author_id: p.id, created_at: now, published_at: null }; db.essays.push(e); }
+      if (!e) { let slug = slugify(f.title); while (db.essays.some(x => x.slug === slug)) slug += "-" + Math.random().toString(36).slice(2, 5); if (f.kind === "substack" && db.essays.some(x => x.external_url === f.external_url)) throw new Error("That Substack essay has already been shared here."); e = { id: uid(), slug, author_id: p.id, created_at: now, published_at: null, kind: f.kind === "substack" ? "substack" : "essay" }; db.essays.push(e); }
       Object.assign(e, { title: f.title.trim(), subtitle: (f.subtitle || "").trim(), body: f.body, status: f.status, updated_at: now });
+      if (e.kind === "substack") Object.assign(e, { external_url: f.external_url, cover_url: f.cover_url || null, source_author: f.source_author || null, source_words: f.source_words || null, source_date: f.source_date || null });
       if (f.status === "published" && !e.published_at) e.published_at = now;
       save(); return essayOut(e, true);
     },
@@ -370,11 +423,12 @@ function previewApi() {
       const t = db.threads.find(x => x.id === id); if (!t) return null;
       return { thread: threadOut(t), replies: db.replies.filter(r => r.thread_id === id).sort((a, b) => new Date(a.created_at) - new Date(b.created_at)).map(r => ({ id: r.id, thread_id: r.thread_id, parent_id: r.parent_id, body: r.body, created_at: r.created_at, author_id: r.author_id, author: prof(r.author_id), score: rScore(r.id), my_vote: db.me ? db.rvotes[db.me + "|" + r.id] || 0 : 0 })) };
     },
-    async createThread(f) { const p = need(); const t = { id: uid(), author_id: p.id, title: f.title.trim(), body: f.body || "", topic: (f.topic || "").trim() || null, essay_slug: f.essay_slug || null, created_at: new Date().toISOString() }; db.threads.push(t); db.tvotes[p.id + "|" + t.id] = 1; save(); return threadOut(t); },
+    async createThread(f) { const p = need(); const t = { id: uid(), author_id: p.id, title: f.title.trim(), body: f.body || "", topic: (f.topic || "").trim() || null, essay_slug: f.essay_slug || null, tweet_url: f.tweet_url || null, created_at: new Date().toISOString() }; db.threads.push(t); db.tvotes[p.id + "|" + t.id] = 1; save(); return threadOut(t); },
     async createReply(f) { const p = need(); const r = { id: uid(), thread_id: f.thread_id, parent_id: f.parent_id || null, author_id: p.id, body: f.body, created_at: new Date().toISOString() }; db.replies.push(r); db.rvotes[p.id + "|" + r.id] = 1; save(); return r; },
     async deleteThread(id) { db.threads = db.threads.filter(t => t.id !== id); db.replies = db.replies.filter(r => r.thread_id !== id); save(); },
     async deleteReply(id) { const kill = new Set([id]); let grew = true; while (grew) { grew = false; for (const r of db.replies) if (r.parent_id && kill.has(r.parent_id) && !kill.has(r.id)) { kill.add(r.id); grew = true; } } db.replies = db.replies.filter(r => !kill.has(r.id)); save(); },
     async vote(kind, id, value) { const p = need(); const m = kind === "thread" ? db.tvotes : db.rvotes; const k = p.id + "|" + id; if (value) m[k] = value; else delete m[k]; save(); },
+    async unfurl() { throw new Error("Details are fetched automatically on the live site. Type the title here."); },
     async subscribe(email) { if (!db.subs.includes(email)) db.subs.push(email); save(); },
     async members() { return Object.values(db.profiles).filter(p => !p.sample).map(p => ({ id: p.id, handle: p.handle, display_name: p.display_name, role: p.role, x_handle: p.x_handle })); },
     async setRole(id, role) { if (db.profiles[id]) db.profiles[id].role = role; save(); listener(); },
@@ -449,18 +503,23 @@ async function liveApi() {
       catch (e) { if (e.code === "23505") throw new Error("That handle is taken."); throw e; }
       await refresh(session);
     },
-    async essays() { return ok(await sb.from("essays").select("id,slug,title,subtitle,status,published_at,updated_at,word_count,excerpt,author_id," + A_ESSAY).eq("status", "published").order("published_at", { ascending: false }).limit(200)); },
+    async essays() { return ok(await sb.from("essays").select("id,slug,title,subtitle,status,published_at,updated_at,word_count,excerpt,author_id,kind,external_url,cover_url,source_author,source_words,source_date," + A_ESSAY).eq("status", "published").order("published_at", { ascending: false }).limit(200)); },
     async essay(slug) { return ok(await sb.from("essays").select("*," + A_ESSAY).eq("slug", slug).maybeSingle()); },
     async essayById(id) { return ok(await sb.from("essays").select("*," + A_ESSAY).eq("id", id).maybeSingle()); },
-    async myEssays() { const p = need(); return ok(await sb.from("essays").select("id,slug,title,subtitle,status,published_at,updated_at,word_count,excerpt,author_id").eq("author_id", p.id).order("updated_at", { ascending: false })); },
+    async myEssays() { const p = need(); return ok(await sb.from("essays").select("id,slug,title,subtitle,status,published_at,updated_at,word_count,excerpt,author_id,kind").eq("author_id", p.id).order("updated_at", { ascending: false })); },
     async saveEssay(f) {
       need();
       const row = { title: f.title.trim(), subtitle: (f.subtitle || "").trim(), body: f.body, status: f.status };
-      if (f.id) return ok(await sb.from("essays").update(row).eq("id", f.id).select("*").single());
+      const sub = f.kind === "substack";
+      if (sub) Object.assign(row, { external_url: f.external_url, cover_url: f.cover_url || null, source_author: f.source_author || null, source_words: f.source_words || null, source_date: f.source_date || null });
+      const dupe = r => r.error && r.error.code === "23505" && /external_url/.test((r.error.message || "") + (r.error.details || ""));
+      if (f.id) { const r = await sb.from("essays").update(row).eq("id", f.id).select("*").single(); if (dupe(r)) throw new Error("That Substack essay has already been shared here."); return ok(r); }
+      if (sub) row.kind = "substack";
       let slug = slugify(f.title);
       for (let i = 0; i < 4; i++) {
         const r = await sb.from("essays").insert({ ...row, slug }).select("*").single();
         if (!r.error) return r.data;
+        if (dupe(r)) throw new Error("That Substack essay has already been shared here.");
         if (r.error.code !== "23505") ok(r);
         slug = slugify(f.title) + "-" + Math.random().toString(36).slice(2, 5);
       }
@@ -468,13 +527,13 @@ async function liveApi() {
     },
     async deleteEssay(id) { ok(await sb.from("essays").delete().eq("id", id)); },
     async threads() {
-      const rows = ok(await sb.from("threads").select("id,title,body,topic,essay_slug,score,reply_count,created_at,author_id," + A_THREAD).order("created_at", { ascending: false }).limit(300));
+      const rows = ok(await sb.from("threads").select("id,title,body,topic,essay_slug,tweet_url,score,reply_count,created_at,author_id," + A_THREAD).order("created_at", { ascending: false }).limit(300));
       const mine = {};
       if (me) for (const v of ok(await sb.from("thread_votes").select("thread_id,value").eq("user_id", me.id))) mine[v.thread_id] = v.value;
       return rows.map(t => ({ ...t, my_vote: mine[t.id] || 0 }));
     },
     async thread(id) {
-      const t = ok(await sb.from("threads").select("id,title,body,topic,essay_slug,score,reply_count,created_at,author_id," + A_THREAD).eq("id", id).maybeSingle());
+      const t = ok(await sb.from("threads").select("id,title,body,topic,essay_slug,tweet_url,score,reply_count,created_at,author_id," + A_THREAD).eq("id", id).maybeSingle());
       if (!t) return null;
       const replies = ok(await sb.from("replies").select("id,thread_id,parent_id,body,score,created_at,author_id," + A_REPLY).eq("thread_id", id).order("created_at", { ascending: true }).limit(2000));
       const mine = {}; t.my_vote = 0;
@@ -486,7 +545,7 @@ async function liveApi() {
     },
     async createThread(f) {
       const p = need();
-      const t = ok(await sb.from("threads").insert({ title: f.title.trim(), body: f.body || "", topic: (f.topic || "").trim() || null, essay_slug: f.essay_slug || null }).select("id").single());
+      const t = ok(await sb.from("threads").insert({ title: f.title.trim(), body: f.body || "", topic: (f.topic || "").trim() || null, essay_slug: f.essay_slug || null, tweet_url: f.tweet_url || null }).select("id").single());
       await sb.from("thread_votes").insert({ user_id: p.id, thread_id: t.id, value: 1 });
       return t;
     },
@@ -507,6 +566,12 @@ async function liveApi() {
         if (!value) ok(await sb.from("reply_votes").delete().eq("user_id", p.id).eq("reply_id", id));
         else ok(await sb.from("reply_votes").upsert({ user_id: p.id, reply_id: id, thread_id: threadId, value }, { onConflict: "user_id,reply_id" }));
       }
+    },
+    async unfurl(url) {
+      need();
+      const r = await sb.functions.invoke("unfurl", { body: { url } });
+      if (r.error) { let msg = ""; try { msg = (await r.error.context.json()).error; } catch (e) {} throw new Error((msg || "The details could not be fetched.") + " You can type the title yourself."); }
+      return r.data;
     },
     async subscribe(email) { ok(await sb.rpc("subscribe", { addr: email })); },
     async members() { return ok(await sb.from("profiles").select("id,handle,display_name,role,x_handle").order("created_at", { ascending: true }).limit(500)); },
@@ -565,11 +630,13 @@ async function viewEssays() {
   const list = await api.essays();
   const head = h("div", { class: "head" },
     h("div", null, h("h1", null, "Essays"), h("p", null, "Long, signed and finished.")),
-    canWrite() ? h("a", { class: "btn", href: "#write" }, "Write an essay") : null);
+    canWrite() ? h("div", { class: "row" }, h("a", { class: "btn", href: "#write" }, "Write an essay"), h("a", { class: "btn ghost", href: "#share" }, "Share from Substack")) : null);
   const ul = h("ul", { class: "essay-list" }, list.map(e => h("li", null,
     h("a", { class: "t", href: "#essay-" + e.slug }, h("h2", null, e.title), e.subtitle ? h("p", { class: "sub" }, e.subtitle) : null),
     e.excerpt ? h("p", { class: "ex" }, e.excerpt + (e.excerpt.length >= 220 ? "…" : "")) : null,
-    h("p", { class: "meta" }, e.sample ? h("span", { class: "tag sample" }, "Sample") : null, byline(e.author), h("span", null, longDate(e.published_at)), h("span", null, readTime(e.word_count || 0))))));
+    e.kind === "substack"
+      ? h("p", { class: "meta" }, h("span", { class: "tag src" }, "Substack"), h("span", null, e.source_author || hostOf(e.external_url)), e.source_date ? h("span", null, longDate(e.source_date)) : null, e.source_words ? h("span", null, readTime(e.source_words)) : null, h("span", null, "Shared by ", byline(e.author)))
+      : h("p", { class: "meta" }, e.sample ? h("span", { class: "tag sample" }, "Sample") : null, byline(e.author), h("span", null, longDate(e.published_at)), h("span", null, readTime(e.word_count || 0))))));
   const email = h("input", { type: "email", id: "sub-email", placeholder: "you@example.com", autocomplete: "email", required: true });
   const st = h("p", { class: "status", role: "status" });
   const form = h("form", { class: "subscribe", onsubmit: ev => { ev.preventDefault(); const v = email.value.trim(); run(form.querySelector("button"), st, async () => { if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)) throw new Error("That does not look like an email address."); await api.subscribe(v); email.value = ""; setStatus(st, "Noted. You will hear when a new essay goes up.", "ok"); }); } },
@@ -584,25 +651,80 @@ async function viewEssay(slug) {
   document.title = e.title + " · Ballardian";
   const st = h("p", { class: "status", role: "status" });
   const copy = h("button", { class: "btn ghost", type: "button", onclick: async () => { try { await navigator.clipboard.writeText(siteBase() + "#essay-" + e.slug); setStatus(st, "Link copied.", "ok"); } catch (x) { setStatus(st, siteBase() + "#essay-" + e.slug); } } }, "Copy link");
+  const actions = h("div", { class: "actions" },
+    h("div", { class: "row" },
+      h("a", { class: "btn" + (e.kind === "substack" ? " ghost" : ""), href: shareUrl(e.title, "essay-" + e.slug), target: "_blank", rel: "noopener" }, "Share on X"), copy,
+      h("a", { class: "btn ghost", href: "#threads", onclick: () => { state.prefill = { title: "On “" + e.title + "”", essay_slug: e.slug, topic: "Essays" }; } }, "Start a thread about this"),
+      mine(e) ? h("a", { class: "btn ghost", href: "#edit-" + e.id }, "Edit") : null),
+    st);
+  if (e.kind === "substack") return h("article", { class: "essay" },
+    h("a", { class: "back", href: "#essays" }, "← Essays"),
+    h("header", null,
+      h("h1", null, e.title), e.subtitle ? h("p", { class: "sub" }, e.subtitle) : null,
+      h("p", { class: "meta" }, h("span", { class: "tag src" }, "Substack"), h("span", null, e.source_author || hostOf(e.external_url)), e.source_date ? h("span", null, longDate(e.source_date)) : null, e.source_words ? h("span", null, readTime(e.source_words)) : null, h("span", null, "Shared by ", byline(e.author)))),
+    e.cover_url ? h("img", { class: "cover", src: e.cover_url, alt: "", loading: "lazy", referrerpolicy: "no-referrer" }) : null,
+    e.body && e.body.trim() ? withTweets(h("div", { class: "prose", html: md(e.body) })) : null,
+    h("p", { style: "margin:26px 0 0" }, h("a", { class: "btn big", href: e.external_url, target: "_blank", rel: "noopener" }, "Read on Substack →")),
+    h("p", { class: "hint" }, "Opens " + hostOf(e.external_url) + " in a new tab."),
+    actions);
   return h("article", { class: "essay" },
     h("a", { class: "back", href: "#essays" }, "← Essays"),
     h("header", null,
       h("h1", null, e.title), e.subtitle ? h("p", { class: "sub" }, e.subtitle) : null,
       h("p", { class: "meta" }, e.status === "draft" ? h("span", { class: "tag sample" }, "Draft") : null, e.sample ? h("span", { class: "tag sample" }, "Sample") : null, byline(e.author), e.published_at ? h("span", null, longDate(e.published_at)) : null, h("span", null, readTime(e.word_count != null ? e.word_count : words(e.body))))),
-    h("div", { class: "prose", html: md(e.body) }),
-    h("div", { class: "actions" },
+    withTweets(h("div", { class: "prose", html: md(e.body) })),
+    actions);
+}
+
+/* Share an essay that lives on Substack: the entry links out, the text stays there. */
+async function viewShare() {
+  if (!api.me()) return gate("Sign in to share an essay.");
+  if (!canWrite()) return notFound("Essays are shared by invited writers. Threads are open to everyone with an account.", "#threads", "Go to Threads");
+  return shareForm({});
+}
+function shareForm(e) {
+  const editing = !!e.id; let extra = { cover_url: e.cover_url || null, source_words: e.source_words || null, source_date: e.source_date || null };
+  const url = h("input", { type: "text", id: "s-url", inputmode: "url", placeholder: "https://name.substack.com/p/title", value: e.external_url || "", autocapitalize: "none", spellcheck: "false" });
+  const title = h("input", { type: "text", id: "s-title", maxlength: "200", value: e.title || "" });
+  const sub = h("input", { type: "text", id: "s-sub", maxlength: "300", value: e.subtitle || "" });
+  const author = h("input", { type: "text", id: "s-author", maxlength: "120", value: e.source_author || "", placeholder: "Who wrote it" });
+  const note = h("textarea", { id: "s-note", maxlength: "4000", style: "min-height:110px", placeholder: "Optional. A few lines on why it is worth reading. Markdown works." }); note.value = e.body || "";
+  const fst = h("p", { class: "status", role: "status" }), st = h("p", { class: "status", role: "status" });
+  const cover = h("div");
+  const paintCover = () => cover.replaceChildren(...(extra.cover_url ? [h("img", { class: "cover", src: extra.cover_url, alt: "", style: "max-height:220px;margin:0 0 16px", referrerpolicy: "no-referrer" })] : []));
+  paintCover();
+  const fetchBtn = h("button", { class: "btn ghost", type: "button", onclick: () => run(fetchBtn, fst, async () => {
+    url.value = parseSubstack(url.value);
+    const d = await api.unfurl(url.value);
+    url.value = d.url || url.value; title.value = d.title || title.value; sub.value = d.subtitle || sub.value; author.value = d.author || author.value;
+    extra = { cover_url: d.cover || null, source_words: d.words || null, source_date: d.date || null }; paintCover();
+    setStatus(fst, d.paid ? "Details filled in. This essay is for paid subscribers, so readers may meet a paywall." : "Details filled in. Check them, then share.", "ok");
+  }) }, "Fetch details");
+  const save = ev => { ev.preventDefault(); run(ev.submitter, st, async () => {
+    const link = parseSubstack(url.value); url.value = link;
+    if (!title.value.trim()) throw new Error("Give it a title, or press Fetch details to fill it in.");
+    const saved = await api.saveEssay({ id: e.id, kind: "substack", title: title.value, subtitle: sub.value, body: note.value, status: "published", external_url: link, cover_url: extra.cover_url, source_author: author.value.trim(), source_words: extra.source_words, source_date: extra.source_date });
+    location.hash = "essay-" + saved.slug;
+  }); };
+  return [
+    h("div", { class: "head" }, h("div", null, h("h1", null, editing ? "Edit shared essay" : "Share from Substack"), h("p", null, "The essay appears on the Essays tab and opens on Substack. Nothing is copied across."))),
+    h("form", { style: "max-width:44em;margin-top:20px", onsubmit: save },
+      h("div", { class: "field" }, h("label", { for: "s-url" }, "Substack essay address"), h("div", { class: "fetchrow" }, url, fetchBtn), fst),
+      cover,
+      field("s-title", "Title", title), field("s-sub", "Subtitle", sub), field("s-author", "Author", author), field("s-note", "Your note", note),
       h("div", { class: "row" },
-        h("a", { class: "btn", href: shareUrl(e.title, "essay-" + e.slug), target: "_blank", rel: "noopener" }, "Share on X"), copy,
-        h("a", { class: "btn ghost", href: "#threads", onclick: () => { state.prefill = { title: "On “" + e.title + "”", essay_slug: e.slug, topic: "Essays" }; } }, "Start a thread about this"),
-        mine(e) ? h("a", { class: "btn ghost", href: "#edit-" + e.id }, "Edit") : null),
-      st));
+        h("button", { class: "btn", type: "submit" }, editing ? "Save changes" : "Share on the Essays tab"),
+        h("a", { class: "btn ghost", href: editing ? "#essay-" + e.slug : "#essays" }, "Cancel"),
+        editing ? confirmBtn("Remove from Essays", () => run(null, st, async () => { await api.deleteEssay(e.id); location.hash = "essays"; })) : null),
+      st)
+  ];
 }
 
 async function viewWrite(id) {
   if (!api.me()) return gate("Sign in to write.");
   if (!canWrite()) return notFound("Essays are published by invited writers. Threads are open to everyone with an account.", "#threads", "Go to Threads");
   let e = { title: "", subtitle: "", body: "", status: "draft" };
-  if (id) { e = await api.essayById(id); if (!e || !mine(e)) return notFound("That draft is not here.", "#account", "Your account"); }
+  if (id) { e = await api.essayById(id); if (!e || !mine(e)) return notFound("That draft is not here.", "#account", "Your account"); if (e.kind === "substack") return shareForm(e); }
   const title = h("input", { type: "text", id: "w-title", maxlength: "200", value: e.title, placeholder: "Title" });
   const sub = h("input", { type: "text", id: "w-sub", maxlength: "300", value: e.subtitle || "", placeholder: "One line under the title (optional)" });
   const body = h("textarea", { id: "w-body", style: "min-height:420px", placeholder: "Write here. Plain Markdown: ## heading, > quotation, **bold**, *italic*, [link text](https://…)" }); body.value = e.body || "";
@@ -644,7 +766,7 @@ async function viewThreads() {
     rows.sort(state.sort === "new" ? (a, b) => new Date(b.created_at) - new Date(a.created_at) : state.sort === "top" ? (a, b) => b.score - a.score || new Date(b.created_at) - new Date(a.created_at) : (a, b) => hot(b) - hot(a));
     ul.replaceChildren(...rows.map(t => h("li", { class: "t-row" }, votes("thread", t),
       h("div", null, h("h2", null, h("a", { href: "#thread-" + t.id }, t.title)),
-        h("p", { class: "meta" }, t.sample ? h("span", { class: "tag sample" }, "Sample") : null, t.topic ? h("button", { class: "tag", type: "button", onclick: () => { state.topic = t.topic; paint(); } }, t.topic) : null, byline(t.author), h("span", null, ago(t.created_at)), h("a", { href: "#thread-" + t.id }, t.reply_count + (t.reply_count === 1 ? " reply" : " replies")))))));
+        h("p", { class: "meta" }, t.sample ? h("span", { class: "tag sample" }, "Sample") : null, t.topic ? h("button", { class: "tag", type: "button", onclick: () => { state.topic = t.topic; paint(); } }, t.topic) : null, parseTweet(t.tweet_url) ? h("span", { class: "tag x" }, "Re @" + parseTweet(t.tweet_url).user + " on X") : null, byline(t.author), h("span", null, ago(t.created_at)), h("a", { href: "#thread-" + t.id }, t.reply_count + (t.reply_count === 1 ? " reply" : " replies")))))));
     if (!rows.length) ul.append(h("li", { class: "empty" }, "No threads yet. Start one."));
     sorts.replaceChildren(h("span", { class: "eyebrow" }, "Sort"), ...["hot", "new", "top"].map(s => h("button", { class: "tag" + (state.sort === s ? " on" : ""), type: "button", onclick: () => { state.sort = s; paint(); } }, s)),
       ...(topics.length ? [h("span", { class: "eyebrow", style: "margin-left:10px" }, "Topic")] : []), ...topics.map(tp => h("button", { class: "tag" + (state.topic === tp ? " on" : ""), type: "button", onclick: () => { state.topic = state.topic === tp ? null : tp; paint(); } }, tp)));
@@ -657,9 +779,14 @@ async function viewThreads() {
   const title = h("input", { type: "text", id: "t-title", maxlength: "200", placeholder: "What is the thread about?", value: pre ? pre.title : "" });
   const topic = h("input", { type: "text", id: "t-topic", maxlength: "24", placeholder: "One word, optional", value: pre ? pre.topic : "" });
   const body = h("textarea", { id: "t-body", maxlength: "10000", placeholder: "Say more (optional). Markdown works." });
+  const xurl = h("input", { type: "text", id: "t-x", inputmode: "url", placeholder: "https://x.com/name/status/…", autocapitalize: "none", spellcheck: "false" });
+  const xprev = h("div");
+  xurl.addEventListener("change", () => { const t = parseTweet(xurl.value); xprev.replaceChildren(...(t ? [tweetEmbed(t)] : [])); });
   const st = h("p", { class: "status", role: "status" });
-  box.append(h("form", { class: "composer", onsubmit: ev => { ev.preventDefault(); run(ev.submitter, st, async () => { if (title.value.trim().length < 4) throw new Error("Give the thread a title of at least four characters."); const t = await api.createThread({ title: title.value, body: body.value, topic: topic.value, essay_slug: pre ? pre.essay_slug : null }); location.hash = "thread-" + t.id; }); } },
-    field("t-title", "Title", title), h("div", { style: "max-width:220px" }, field("t-topic", "Topic", topic)), field("t-body", "Post", body),
+  box.append(h("form", { class: "composer", onsubmit: ev => { ev.preventDefault(); run(ev.submitter, st, async () => { if (title.value.trim().length < 4) throw new Error("Give the thread a title of at least four characters."); const tw = xurl.value.trim() ? parseTweet(xurl.value) : null; if (xurl.value.trim() && !tw) throw new Error("That does not look like a link to a post on X. It should read x.com/name/status/ and a number."); const t = await api.createThread({ title: title.value, body: body.value, topic: topic.value, essay_slug: pre ? pre.essay_slug : null, tweet_url: tw ? tw.url : null }); location.hash = "thread-" + t.id; }); } },
+    field("t-title", "Title", title), h("div", { style: "max-width:220px" }, field("t-topic", "Topic", topic)),
+    field("t-x", "Post on X to discuss (optional)", xurl, "Paste a link to a post and it is shown at the top of the thread."), xprev,
+    field("t-body", "Post", body),
     h("div", { class: "row" }, h("button", { class: "btn", type: "submit" }, "Post thread"), h("button", { class: "btn ghost", type: "button", onclick: () => { box.hidden = true; } }, "Cancel")), st));
   return [h("div", { class: "head" }, h("div", null, h("h1", null, "Threads"), h("p", null, "Short, unfinished and open to reply.")), openBtn), box, sorts, ul];
 }
@@ -672,7 +799,7 @@ async function viewThread(id) {
   const order = arr => arr.slice().sort((a, b) => b.score - a.score || new Date(a.created_at) - new Date(b.created_at));
   const st = h("p", { class: "status", role: "status" });
   const replyForm = (parentId, onDone) => {
-    const ta = h("textarea", { id: "rb-" + (parentId || "root"), maxlength: "5000", placeholder: parentId ? "Reply" : "Add to the thread", "aria-label": "Your reply" });
+    const ta = h("textarea", { id: "rb-" + (parentId || "root"), maxlength: "5000", placeholder: parentId ? "Reply" : "Add to the thread. Paste a link to a post on X and the post is shown.", "aria-label": "Your reply" });
     const s = h("p", { class: "status", role: "status" });
     return h("form", { class: "replybox", onsubmit: ev => { ev.preventDefault(); run(ev.submitter, s, async () => { if (!ta.value.trim()) throw new Error("Write something first."); await api.createReply({ thread_id: t.id, parent_id: parentId, body: ta.value.trim() }); await render(); }); } },
       ta, h("div", { class: "row", style: "margin-top:8px" }, h("button", { class: "btn small", type: "submit" }, "Reply"), onDone ? h("button", { class: "btn ghost small", type: "button", onclick: onDone }, "Cancel") : null), s);
@@ -683,7 +810,7 @@ async function viewThread(id) {
       h("button", { class: "linkbtn", type: "button", onclick: () => { if (!api.me()) { location.hash = "account"; return; } if (slot.firstChild) slot.replaceChildren(); else { slot.append(replyForm(r.id, () => slot.replaceChildren())); slot.querySelector("textarea").focus(); } } }, "Reply"),
       mine(r) ? confirmBtn("Delete", () => run(null, st, async () => { await api.deleteReply(r.id); await render(); })) : null);
     return h("li", { class: "reply" }, votes("reply", r, t.id),
-      h("div", null, h("p", { class: "meta" }, byline(r.author), h("span", null, ago(r.created_at))), h("div", { class: "prose small body", html: md(r.body) }), tools, slot),
+      h("div", null, h("p", { class: "meta" }, byline(r.author), h("span", null, ago(r.created_at))), withTweets(h("div", { class: "prose small body", html: md(r.body) })), tools, slot),
       kids[r.id] ? h("ul", { class: "kids" }, order(kids[r.id]).map(k => node(k, depth + 1))) : null);
   };
   return [
@@ -692,7 +819,8 @@ async function viewThread(id) {
       h("div", null, h("h1", null, t.title),
         h("p", { class: "meta" }, t.sample ? h("span", { class: "tag sample" }, "Sample") : null, t.topic ? h("span", { class: "tag sample" }, t.topic) : null, byline(t.author), h("span", null, ago(t.created_at)),
           t.essay_slug ? h("a", { href: "#essay-" + t.essay_slug }, "About an essay →") : null),
-        t.body ? h("div", { class: "prose small", html: md(t.body) }) : null,
+        parseTweet(t.tweet_url) ? tweetEmbed(parseTweet(t.tweet_url)) : null,
+        t.body ? withTweets(h("div", { class: "prose small", html: md(t.body) }), parseTweet(t.tweet_url) ? parseTweet(t.tweet_url).id : null) : null,
         h("div", { class: "row", style: "margin-top:14px;gap:16px" },
           h("a", { class: "linkbtn", href: shareUrl(t.title, "thread-" + t.id), target: "_blank", rel: "noopener", style: "text-decoration:none" }, "Share on X"),
           mine(t) ? confirmBtn("Delete thread", () => run(null, st, async () => { await api.deleteThread(t.id); location.hash = "threads"; })) : null), st)),
@@ -746,6 +874,18 @@ function viewBallard() {
   ];
 }
 
+/* ---------- About ---------- */
+function viewAbout() {
+  document.title = "About · Ballardian";
+  return [
+    h("div", { class: "head" }, h("div", null, h("h1", null, "About"))),
+    h("div", { class: "about" },
+      h("p", { class: "lede" }, "Ballardian is set up and maintained by J.G. Ballard’s daughter, Bea Ballard, and his granddaughter, Alice Ballard-Rossiter."),
+      h("p", null, "It is a place for essays and arguments about technology and the inner life, the ground his fiction covered. Essays are published by invited writers. Threads are open to anyone with an account."),
+      h("p", null, "The ", h("a", { href: "#ballard" }, "J.G. Ballard"), " tab is a short record of his life and work."))
+  ];
+}
+
 /* ---------- Account ---------- */
 async function viewAccount() {
   const me = api.me(); const live = api.mode === "live";
@@ -784,9 +924,9 @@ async function viewAccount() {
           !live || !CONFIG.xSignIn ? h("p", { class: "hint" }, live ? "X linking is not switched on yet." : "X linking switches on with live accounts.") : null), xst));
   if (canWrite()) {
     const list = await api.myEssays();
-    out.push(h("section", { class: "panel" }, h("div", { class: "row", style: "justify-content:space-between;margin-bottom:12px" }, h("h2", { style: "font-stretch:88%;font-weight:700;font-size:22px" }, "Your essays"), h("a", { class: "btn small", href: "#write" }, "Write an essay")),
+    out.push(h("section", { class: "panel" }, h("div", { class: "row", style: "justify-content:space-between;margin-bottom:12px" }, h("h2", { style: "font-stretch:88%;font-weight:700;font-size:22px" }, "Your essays"), h("div", { class: "row" }, h("a", { class: "btn small", href: "#write" }, "Write an essay"), h("a", { class: "btn ghost small", href: "#share" }, "Share from Substack"))),
       list.length ? h("div", { class: "scroll" }, h("table", { class: "plain" }, h("thead", null, h("tr", null, h("th", null, "Title"), h("th", null, "Status"), h("th", null, "Updated"), h("th", null, ""))),
-        h("tbody", null, list.map(e => h("tr", null, h("td", null, e.status === "published" ? h("a", { href: "#essay-" + e.slug }, e.title) : e.title), h("td", null, h("span", { class: "tag" + (e.status === "published" ? " sample" : ""), style: "cursor:default" }, e.status)), h("td", { style: "white-space:nowrap" }, ago(e.updated_at)), h("td", null, h("a", { class: "linkbtn", href: "#edit-" + e.id, style: "text-decoration:none" }, "Edit"))))))) : h("p", { class: "hint" }, "No essays or drafts yet.")));
+        h("tbody", null, list.map(e => h("tr", null, h("td", null, e.status === "published" ? h("a", { href: "#essay-" + e.slug }, e.title) : e.title), h("td", null, h("span", { class: "tag" + (e.status === "published" ? " sample" : ""), style: "cursor:default" }, e.kind === "substack" ? "substack" : e.status)), h("td", { style: "white-space:nowrap" }, ago(e.updated_at)), h("td", null, h("a", { class: "linkbtn", href: "#edit-" + e.id, style: "text-decoration:none" }, "Edit"))))))) : h("p", { class: "hint" }, "No essays or drafts yet.")));
   } else {
     out.push(h("section", { class: "panel" }, h("h2", null, "Writing essays"), h("p", { style: "margin:0;max-width:60ch" }, "Essays are published by invited writers. Threads are open to you now.")));
   }
@@ -814,8 +954,10 @@ function route() {
   if (x === "essays") return { tab: "essays", fn: viewEssays };
   if (x === "threads") return { tab: "threads", fn: viewThreads };
   if (x === "ballard") return { tab: "ballard", fn: viewBallard };
+  if (x === "about") return { tab: "about", fn: viewAbout };
   if (x === "account") return { tab: "account", fn: viewAccount };
   if (x === "write") return { tab: "essays", fn: () => viewWrite(null) };
+  if (x === "share") return { tab: "essays", fn: viewShare };
   if (x.startsWith("edit-")) return { tab: "essays", fn: () => viewWrite(x.slice(5)) };
   if (x.startsWith("essay-")) return { tab: "essays", fn: () => viewEssay(x.slice(6)) };
   if (x.startsWith("thread-")) return { tab: "threads", fn: () => viewThread(x.slice(7)) };
