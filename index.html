@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ballardian</title>
+<meta name="description" content="Essays and threads on technology and the inner life, with a page on the life and work of J.G. Ballard.">
+<meta property="og:title" content="Ballardian">
+<meta property="og:description" content="Essays and threads on technology and the inner life.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://ballardian.ai/">
+<meta property="og:image" content="https://ballardian.ai/collage.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&family=IBM+Plex+Mono:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,400..650;1,6..72,400..650&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: a clinical white page laid over a pile of Ballard paperbacks.
+   Black cover-label masthead, file tabs, one reading column. Single theme by choice. */
+:root {
+  color-scheme: light;
+  --ink: #101012;
+  --paper: #f6f5f0;
+  --paper-2: #ebe9e1;
+  --line: #d4d1c6;
+  --muted: #63625c;
+  --signal: #d9112a;      /* the red of the Empire of the Sun and High-Rise jackets */
+  --sodium: #f26a1b;      /* Penguin orange */
+  --cold: #0f6f7c;        /* the green-blue of the 1970s Penguin spines */
+  --display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --body: "Newsreader", "Iowan Old Style", Georgia, serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: #0b0b0c; color: var(--ink);
+  font-family: var(--body); font-size: 18px; line-height: 1.55;
+}
+body::before {
+  content: ""; position: fixed; inset: 0; z-index: -1;
+  background:
+    linear-gradient(rgba(11,11,12,.18), rgba(11,11,12,.5)),
+    #0b0b0c url("collage.jpg") center / cover no-repeat;
+}
+a { color: inherit; }
+img { max-width: 100%; }
+button, input, textarea, select { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--sodium); outline-offset: 2px; }
+.wrap { max-width: 920px; margin: 0 auto; padding: 0 16px; }
+
+/* Masthead */
+.mast { padding: clamp(28px, 7vw, 72px) 0 clamp(20px, 4vw, 36px); }
+.label { display: inline-block; background: var(--ink); color: #fff; padding: 16px 22px 14px; text-decoration: none; border-left: 10px solid var(--signal); }
+.wordmark { font-family: var(--display); font-stretch: 62%; font-weight: 800; font-size: clamp(46px, 11vw, 104px); line-height: .88; letter-spacing: .005em; text-transform: uppercase; margin: 0; }
+.tagline { font-family: var(--display); font-stretch: 100%; font-weight: 300; font-size: clamp(15px, 2.4vw, 19px); margin: 10px 0 0; letter-spacing: .01em; }
+
+/* Tabs */
+.tabs { display: flex; flex-wrap: wrap; gap: 4px; align-items: flex-end; }
+.tab { font-family: var(--mono); font-size: 12.5px; letter-spacing: .09em; text-transform: uppercase; text-decoration: none; background: var(--ink); color: #fff; padding: 12px 16px 10px; border: 0; cursor: pointer; }
+.tab:hover { background: #2a2a2e; }
+.tab[aria-current="page"] { background: var(--paper); color: var(--ink); padding-bottom: 14px; }
+.tab.right { margin-left: auto; }
+.tab .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--signal); margin-right: 8px; vertical-align: 1px; }
+
+/* Paper */
+.paper { background: var(--paper); padding: clamp(22px, 5.5vw, 60px); min-height: 60vh; box-shadow: 0 30px 80px rgba(0,0,0,.55); }
+.notice { font-family: var(--mono); font-size: 12.5px; background: var(--ink); color: #fff; padding: 9px 14px; margin: 0; }
+.notice b { color: var(--sodium); font-weight: 500; }
+
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; }
+.eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin: 0; }
+.meta { font-family: var(--mono); font-size: 12.5px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center; }
+.meta a { text-decoration: none; border-bottom: 1px solid var(--line); }
+.meta a:hover { border-color: var(--ink); color: var(--ink); }
+.tag { font-family: var(--mono); font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; border: 1px solid var(--ink); padding: 1px 7px; background: none; cursor: pointer; }
+.tag.on, .tag.sample { background: var(--ink); color: #fff; }
+.tag.sample { border-color: var(--ink); cursor: default; }
+.xh { color: var(--cold); }
+
+.head { display: flex; flex-wrap: wrap; gap: 14px 20px; align-items: flex-end; justify-content: space-between; padding-bottom: 18px; border-bottom: 3px solid var(--ink); margin-bottom: 6px; }
+.head h1 { font-stretch: 75%; font-weight: 750; font-size: clamp(30px, 6vw, 46px); line-height: 1; text-transform: uppercase; }
+.head p { margin: 6px 0 0; color: var(--muted); max-width: 46ch; }
+.row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+
+/* Buttons and fields */
+.btn { font-family: var(--mono); font-size: 13px; letter-spacing: .05em; text-transform: uppercase; background: var(--ink); color: #fff; border: 1.5px solid var(--ink); padding: 10px 16px; cursor: pointer; text-decoration: none; display: inline-block; line-height: 1.2; }
+.btn:hover { background: var(--signal); border-color: var(--signal); }
+.btn.ghost { background: none; color: var(--ink); }
+.btn.ghost:hover { background: var(--ink); color: #fff; border-color: var(--ink); }
+.btn.small { padding: 6px 10px; font-size: 12px; }
+.btn[disabled] { opacity: .45; cursor: not-allowed; }
+.linkbtn { font-family: var(--mono); font-size: 12.5px; background: none; border: 0; padding: 0; color: var(--muted); cursor: pointer; border-bottom: 1px solid var(--line); }
+.linkbtn:hover { color: var(--ink); border-color: var(--ink); }
+.linkbtn.danger:hover { color: var(--signal); border-color: var(--signal); }
+label { font-family: var(--mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 5px; }
+input[type="text"], input[type="email"], textarea { width: 100%; background: #fff; border: 1.5px solid var(--ink); padding: 10px 12px; border-radius: 0; font-family: var(--body); font-size: 18px; }
+textarea { min-height: 120px; resize: vertical; line-height: 1.5; }
+.field { margin-bottom: 16px; }
+.hint { font-size: 15px; color: var(--muted); margin: 6px 0 0; }
+.form { display: grid; gap: 4px; max-width: 640px; }
+.status { font-family: var(--mono); font-size: 13px; margin: 10px 0 0; min-height: 1.3em; }
+.status.err { color: var(--signal); }
+.status.ok { color: var(--cold); }
+.empty { padding: 36px 0; color: var(--muted); font-style: italic; }
+
+/* Essays */
+.essay-list { list-style: none; margin: 0; padding: 0; }
+.essay-list li { padding: 26px 0; border-bottom: 1px solid var(--line); }
+.essay-list a.t { text-decoration: none; display: block; }
+.essay-list h2 { font-stretch: 88%; font-weight: 700; font-size: clamp(25px, 4.4vw, 34px); line-height: 1.08; }
+.essay-list a.t:hover h2 { color: var(--signal); }
+.essay-list .sub { font-style: italic; font-size: 20px; color: #3b3a36; margin: 6px 0 0; }
+.essay-list .ex { margin: 10px 0 12px; color: #3b3a36; max-width: 62ch; }
+.subscribe { margin-top: 36px; padding: 22px; background: var(--paper-2); border-left: 10px solid var(--ink); }
+.subscribe h3 { font-stretch: 88%; font-weight: 700; font-size: 20px; margin-bottom: 10px; }
+.subscribe .row input { flex: 1 1 240px; width: auto; }
+
+.essay { max-width: 34em; margin: 0 auto; }
+.essay header { margin-bottom: 30px; }
+.essay h1 { font-stretch: 86%; font-weight: 750; font-size: clamp(34px, 7vw, 54px); line-height: 1.02; margin: 12px 0 0; }
+.essay .sub { font-style: italic; font-size: clamp(20px, 3.4vw, 24px); line-height: 1.3; color: #3b3a36; margin: 12px 0 18px; }
+.prose { font-size: 20px; line-height: 1.62; overflow-wrap: break-word; }
+.prose p { margin: 0 0 1.05em; }
+.prose h2 { font-stretch: 88%; font-weight: 700; font-size: 27px; line-height: 1.15; margin: 1.6em 0 .5em; }
+.prose h3 { font-stretch: 88%; font-weight: 700; font-size: 21px; margin: 1.4em 0 .4em; }
+.prose blockquote { margin: 1.2em 0; padding: 2px 0 2px 18px; border-left: 4px solid var(--signal); font-style: italic; }
+.prose blockquote p:last-child { margin-bottom: 0; }
+.prose ul, .prose ol { padding-left: 1.2em; margin: 0 0 1.05em; }
+.prose a { color: var(--ink); text-decoration-color: var(--signal); text-decoration-thickness: 2px; text-underline-offset: 3px; }
+.prose a:hover { color: var(--signal); }
+.prose code { font-family: var(--mono); font-size: .82em; background: var(--paper-2); padding: 1px 5px; }
+.prose hr { border: 0; border-top: 1px solid var(--ink); width: 80px; margin: 2em auto; }
+.prose.small { font-size: 17.5px; line-height: 1.55; }
+.prose.small p { margin-bottom: .7em; }
+.prose.small p:last-child { margin-bottom: 0; }
+.actions { margin-top: 34px; padding-top: 18px; border-top: 3px solid var(--ink); }
+.back { font-family: var(--mono); font-size: 12.5px; text-decoration: none; color: var(--muted); }
+.back:hover { color: var(--ink); }
+
+/* Threads */
+.sorts { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 16px 0 4px; }
+.composer { background: var(--paper-2); padding: 20px; margin: 16px 0 8px; border-left: 10px solid var(--ink); }
+.t-list { list-style: none; margin: 0; padding: 0; }
+.t-row { display: grid; grid-template-columns: 46px 1fr; gap: 14px; padding: 18px 0; border-bottom: 1px solid var(--line); }
+.votes { display: grid; justify-items: center; align-content: start; gap: 1px; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.votes button { background: none; border: 0; cursor: pointer; padding: 4px 8px; line-height: 0; color: #a3a198; }
+.votes button:hover { color: var(--ink); }
+.votes button svg { width: 16px; height: 10px; display: block; }
+.votes .up[aria-pressed="true"] { color: var(--signal); }
+.votes .down[aria-pressed="true"] { color: var(--cold); }
+.votes .n { font-size: 14px; font-weight: 500; }
+.t-row h2 { font-stretch: 92%; font-weight: 650; font-size: 21px; line-height: 1.2; }
+.t-row h2 a { text-decoration: none; }
+.t-row h2 a:hover { color: var(--signal); }
+.t-row .meta { margin-top: 7px; }
+.thread-top { display: grid; grid-template-columns: 46px 1fr; gap: 14px; padding: 4px 0 22px; border-bottom: 3px solid var(--ink); }
+.thread-top h1 { font-stretch: 90%; font-weight: 700; font-size: clamp(25px, 5vw, 34px); line-height: 1.1; margin-bottom: 8px; }
+.thread-top .prose { margin-top: 14px; max-width: 64ch; }
+.replies { list-style: none; margin: 0; padding: 0; }
+.reply { display: grid; grid-template-columns: 34px 1fr; gap: 10px; padding: 16px 0 0; }
+.reply .votes button { padding: 3px 6px; }
+.reply .votes button svg { width: 13px; height: 8px; }
+.reply .votes .n { font-size: 12.5px; }
+.reply .body { max-width: 64ch; margin-top: 5px; }
+.reply .kids { list-style: none; margin: 0; padding: 0 0 0 clamp(8px, 2.2vw, 20px); border-left: 2px solid var(--line); grid-column: 1 / -1; }
+.reply .tools { display: flex; gap: 14px; margin-top: 7px; }
+.replybox { margin-top: 10px; max-width: 64ch; }
+.replybox textarea { min-height: 84px; font-size: 17px; }
+
+/* J.G. Ballard */
+.jgb-head { border-bottom: 3px solid var(--ink); padding-bottom: 20px; }
+.jgb-head h1 { font-stretch: 62%; font-weight: 800; font-size: clamp(52px, 13vw, 124px); line-height: .86; text-transform: uppercase; }
+.jgb-head .years { font-family: var(--display); font-stretch: 100%; font-weight: 300; font-size: clamp(22px, 4.6vw, 38px); margin: 10px 0 0; font-variant-numeric: tabular-nums; }
+.jgb { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: clamp(24px, 5vw, 56px); margin-top: 28px; }
+.jgb h2 { font-family: var(--mono); font-weight: 500; font-size: 12.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--signal); margin: 30px 0 12px; }
+.jgb section > h2:first-child { margin-top: 0; }
+.jgb .lede { font-size: 22px; line-height: 1.45; margin: 0 0 1em; }
+.jgb p { margin: 0 0 1em; }
+.years-list { list-style: none; margin: 0; padding: 0; }
+.years-list li { display: grid; grid-template-columns: 4.6em 1fr; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--line); }
+.years-list .y { font-family: var(--mono); font-size: 14px; font-variant-numeric: tabular-nums; color: var(--muted); padding-top: 3px; }
+.years-list i { font-style: italic; }
+.years-list.books li { grid-template-columns: 3.4em 1fr; padding: 5px 0; }
+
+/* Account */
+.panel { border-top: 3px solid var(--ink); padding-top: 18px; margin-top: 34px; }
+.panel > h2 { font-stretch: 88%; font-weight: 700; font-size: 22px; margin-bottom: 12px; }
+.or { font-family: var(--mono); font-size: 12px; color: var(--muted); letter-spacing: .1em; text-transform: uppercase; margin: 18px 0; display: flex; align-items: center; gap: 12px; max-width: 640px; }
+.or::before, .or::after { content: ""; flex: 1; border-top: 1px solid var(--line); }
+table.plain { border-collapse: collapse; width: 100%; font-size: 16px; }
+table.plain th, table.plain td { text-align: left; padding: 8px 10px 8px 0; border-bottom: 1px solid var(--line); vertical-align: middle; }
+table.plain th { font-family: var(--mono); font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 400; }
+.scroll { overflow-x: auto; }
+select { background: #fff; border: 1.5px solid var(--ink); padding: 5px 8px; font-family: var(--mono); font-size: 13px; border-radius: 0; }
+
+.foot { padding: 26px 0 60px; }
+.foot p { display: inline-block; background: var(--ink); color: #fff; font-family: var(--mono); font-size: 12px; padding: 8px 12px; margin: 0; }
+.foot a { color: #fff; }
+
+@media (max-width: 720px) {
+  .jgb { grid-template-columns: 1fr; }
+  .tab { padding: 11px 11px 9px; font-size: 11.5px; letter-spacing: .06em; }
+  .tab[aria-current="page"] { padding-bottom: 13px; }
+  body { font-size: 17px; }
+  .prose { font-size: 19px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .btn, .tab, .votes button, a { transition: color .12s, background-color .12s, border-color .12s; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="mast">
+    <a class="label" href="#essays" aria-label="Ballardian, home">
+      <p class="wordmark">Ballardian</p>
+      <p class="tagline">Writing on technology and the inner life</p>
+    </a>
+  </header>
+  <nav class="tabs" aria-label="Sections" id="tabs">
+    <a class="tab" href="#essays" data-tab="essays">Essays</a>
+    <a class="tab" href="#threads" data-tab="threads">Threads</a>
+    <a class="tab" href="#ballard" data-tab="ballard">J.G. Ballard</a>
+    <a class="tab right" href="#account" data-tab="account" id="acct-tab">Sign in</a>
+  </nav>
+  <p class="notice" id="notice" hidden></p>
+  <main class="paper" id="view" aria-live="polite"><p class="empty">Loading.</p></main>
+  <footer class="foot"><p>Ballardian &middot; <a href="#ballard">J.G. Ballard, 1930&ndash;2009</a></p></footer>
+</div>
+
+<script>
+/* ------------------------------------------------------------------ *
+ *  CONFIG. Leave the two Supabase values empty to run in preview mode
+ *  (everything works, but is saved only in the visitor's browser).
+ *  Fill them in to switch the site to live accounts and shared posts.
+ *  The anon key is designed to be public; access is enforced by the
+ *  row-level rules in schema.sql.
+ * ------------------------------------------------------------------ */
+const CONFIG = {
+  supabaseUrl: "",
+  supabaseAnonKey: "",
+  xSignIn: false            // set true once the X provider is switched on in Supabase
+};
+const SUPABASE_JS = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js";
+
+/* ---------- small helpers ---------- */
+function h(tag, attrs, ...kids) {
+  const el = document.createElement(tag);
+  if (attrs) for (const [k, v] of Object.entries(attrs)) {
+    if (v == null || v === false) continue;
+    if (k === "class") el.className = v;
+    else if (k === "html") el.innerHTML = v;
+    else if (k.startsWith("on")) el.addEventListener(k.slice(2), v);
+    else el.setAttribute(k, v === true ? "" : v);
+  }
+  for (const kid of kids.flat(Infinity)) {
+    if (kid == null || kid === false) continue;
+    el.append(kid.nodeType ? kid : document.createTextNode(String(kid)));
+  }
+  return el;
+}
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+/* Markdown, deliberately small: paragraphs, ## headings, > quotes, lists, links, bold, italic, code, --- */
+function mdInline(s) {
+  const keep = [];
+  const stash = html => { keep.push(html); return "\u0000" + (keep.length - 1) + "\u0000"; };
+  s = esc(s);
+  s = s.replace(/`([^`]+)`/g, (m, c) => stash("<code>" + c + "</code>"));
+  s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, (m, t, u) => stash('<a href="' + u + '" target="_blank" rel="noopener nofollow">' + t + "</a>"));
+  s = s.replace(/(^|[\s(])(https?:\/\/[^\s<]+[^\s<.,;:!?)])/g, (m, p, u) => p + stash('<a href="' + u + '" target="_blank" rel="noopener nofollow">' + u + "</a>"));
+  s = s.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+  s = s.replace(/(^|[^*\w])\*([^*\s][^*]*?)\*(?!\w)/g, "$1<em>$2</em>");
+  s = s.replace(/(^|[\s(])_([^_\s][^_]*?)_(?=[\s).,;:!?]|$)/g, "$1<em>$2</em>");
+  return s.replace(/\u0000(\d+)\u0000/g, (m, i) => keep[+i]);
+}
+function md(src) {
+  const lines = String(src || "").replace(/\r\n?/g, "\n").split("\n");
+  const out = []; let para = [], list = null, quote = [];
+  const flushP = () => { if (para.length) { out.push("<p>" + mdInline(para.join(" ")) + "</p>"); para = []; } };
+  const flushL = () => { if (list) { out.push("<" + list.t + ">" + list.items.map(i => "<li>" + mdInline(i) + "</li>").join("") + "</" + list.t + ">"); list = null; } };
+  const flushQ = () => { if (quote.length) { out.push("<blockquote>" + md(quote.join("\n")) + "</blockquote>"); quote = []; } };
+  const flush = () => { flushP(); flushL(); flushQ(); };
+  for (const raw of lines) {
+    const line = raw.trimEnd(); let m;
+    if (!line.trim()) { flush(); continue; }
+    if ((m = line.match(/^>\s?(.*)$/))) { flushP(); flushL(); quote.push(m[1]); continue; }
+    flushQ();
+    if ((m = line.match(/^(#{1,3})\s+(.+)$/))) { flush(); const t = m[1].length === 3 ? "h3" : "h2"; out.push("<" + t + ">" + mdInline(m[2]) + "</" + t + ">"); continue; }
+    if (/^(-{3,}|\*{3,})$/.test(line.trim())) { flush(); out.push("<hr>"); continue; }
+    if ((m = line.match(/^\s*[-*]\s+(.+)$/))) { flushP(); if (!list || list.t !== "ul") { flushL(); list = { t: "ul", items: [] }; } list.items.push(m[1]); continue; }
+    if ((m = line.match(/^\s*\d+[.)]\s+(.+)$/))) { flushP(); if (!list || list.t !== "ol") { flushL(); list = { t: "ol", items: [] }; } list.items.push(m[1]); continue; }
+    flushL(); para.push(line.trim());
+  }
+  flush();
+  return out.join("\n");
+}
+const plain = s => String(s || "").replace(/^#{1,3} .*$/gm, "").replace(/^-{3,}$/gm, "").replace(/[#>*_`]/g, "").replace(/\[([^\]]+)\]\([^)]+\)/g, "$1").replace(/\s+/g, " ").trim();
+const words = s => (String(s || "").trim().match(/\S+/g) || []).length;
+const readTime = n => Math.max(1, Math.round(n / 230)) + " min read";
+const longDate = d => new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+function ago(d) {
+  const s = Math.max(0, (Date.now() - new Date(d).getTime()) / 1000);
+  if (s < 60) return "just now";
+  if (s < 3600) return Math.floor(s / 60) + "m ago";
+  if (s < 86400) return Math.floor(s / 3600) + "h ago";
+  if (s < 86400 * 30) return Math.floor(s / 86400) + "d ago";
+  return longDate(d);
+}
+const slugify = s => String(s).toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 70) || "essay";
+const uid = () => (crypto.randomUUID ? crypto.randomUUID() : "id-" + Math.random().toString(16).slice(2) + Date.now().toString(16));
+const siteBase = () => location.origin + location.pathname;
+const shareUrl = (text, hash) => "https://x.com/intent/post?text=" + encodeURIComponent(text) + "&url=" + encodeURIComponent(siteBase() + "#" + hash);
+
+/* =====================================================================
+ *  DATA LAYER. Two interchangeable back ends with the same methods:
+ *  previewApi (this browser only) and liveApi (Supabase).
+ * ===================================================================== */
+
+function previewApi() {
+  const KEY = "ballardian-preview-v1";
+  let db = null;
+  try { db = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
+  if (!db || !db.v) db = seed();
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(db)); } catch (e) {} };
+  let listener = () => {};
+  const prof = id => { const p = db.profiles[id]; return p ? { handle: p.handle, display_name: p.display_name, x_handle: p.x_handle, avatar_url: null } : { handle: "gone", display_name: "Deleted" }; };
+  const meP = () => (db.me ? db.profiles[db.me] : null);
+  const need = () => { const p = meP(); if (!p) throw new Error("Sign in first."); return p; };
+  const essayOut = (e, full) => ({ id: e.id, slug: e.slug, title: e.title, subtitle: e.subtitle, status: e.status, published_at: e.published_at, updated_at: e.updated_at, word_count: words(e.body), excerpt: plain(e.body).slice(0, 220), author_id: e.author_id, author: prof(e.author_id), sample: !!e.sample, body: full ? e.body : undefined });
+  const tScore = id => Object.entries(db.tvotes).reduce((n, [k, v]) => n + (k.endsWith("|" + id) ? v : 0), 0) + ((db.threads.find(t => t.id === id) || {}).base || 0);
+  const rScore = id => Object.entries(db.rvotes).reduce((n, [k, v]) => n + (k.endsWith("|" + id) ? v : 0), 0) + ((db.replies.find(r => r.id === id) || {}).base || 0);
+  const threadOut = t => ({ id: t.id, title: t.title, body: t.body, topic: t.topic, essay_slug: t.essay_slug, created_at: t.created_at, author_id: t.author_id, author: prof(t.author_id), sample: !!t.sample, score: tScore(t.id), reply_count: db.replies.filter(r => r.thread_id === t.id).length, my_vote: db.me ? db.tvotes[db.me + "|" + t.id] || 0 : 0 });
+  return {
+    mode: "preview",
+    async init(cb) { listener = cb; },
+    me: meP,
+    async signInEmail(name) {
+      name = String(name || "").trim(); if (name.length < 2) throw new Error("Type a name of at least two characters.");
+      const handle = slugify(name).replace(/-/g, "_").slice(0, 24) || "reader";
+      let id = Object.keys(db.profiles).find(k => db.profiles[k].handle === handle && !db.profiles[k].sample);
+      if (!id) { id = uid(); db.profiles[id] = { id, handle, display_name: name, bio: "", x_handle: null, role: "admin" }; }
+      db.me = id; save(); listener(); return { signedIn: true };
+    },
+    async signInX() { throw new Error("X sign-in is switched on when the site is connected to live accounts."); },
+    async linkX() { throw new Error("X linking is switched on when the site is connected to live accounts."); },
+    async unlinkX() {},
+    async signOut() { db.me = null; save(); listener(); },
+    async updateProfile(f) {
+      const p = need();
+      if (!/^[a-z0-9_]{2,24}$/.test(f.handle)) throw new Error("Handles use 2 to 24 lowercase letters, numbers or underscores.");
+      if (Object.values(db.profiles).some(o => o.id !== p.id && o.handle === f.handle)) throw new Error("That handle is taken.");
+      Object.assign(p, { handle: f.handle, display_name: f.display_name.trim() || f.handle, bio: f.bio || "" }); save(); listener();
+    },
+    async essays() { return db.essays.filter(e => e.status === "published").sort((a, b) => new Date(b.published_at) - new Date(a.published_at)).map(e => essayOut(e)); },
+    async essay(slug) { const e = db.essays.find(x => x.slug === slug && (x.status === "published" || x.author_id === db.me)); return e ? essayOut(e, true) : null; },
+    async essayById(id) { const e = db.essays.find(x => x.id === id && x.author_id === db.me); return e ? essayOut(e, true) : null; },
+    async myEssays() { return db.essays.filter(e => e.author_id === db.me).sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at)).map(e => essayOut(e)); },
+    async saveEssay(f) {
+      const p = need(); const now = new Date().toISOString(); let e = f.id && db.essays.find(x => x.id === f.id && x.author_id === p.id);
+      if (!e) { let slug = slugify(f.title); while (db.essays.some(x => x.slug === slug)) slug += "-" + Math.random().toString(36).slice(2, 5); e = { id: uid(), slug, author_id: p.id, created_at: now, published_at: null }; db.essays.push(e); }
+      Object.assign(e, { title: f.title.trim(), subtitle: (f.subtitle || "").trim(), body: f.body, status: f.status, updated_at: now });
+      if (f.status === "published" && !e.published_at) e.published_at = now;
+      save(); return essayOut(e, true);
+    },
+    async deleteEssay(id) { db.essays = db.essays.filter(e => e.id !== id); save(); },
+    async threads() { return db.threads.map(threadOut); },
+    async thread(id) {
+      const t = db.threads.find(x => x.id === id); if (!t) return null;
+      return { thread: threadOut(t), replies: db.replies.filter(r => r.thread_id === id).sort((a, b) => new Date(a.created_at) - new Date(b.created_at)).map(r => ({ id: r.id, thread_id: r.thread_id, parent_id: r.parent_id, body: r.body, created_at: r.created_at, author_id: r.author_id, author: prof(r.author_id), score: rScore(r.id), my_vote: db.me ? db.rvotes[db.me + "|" + r.id] || 0 : 0 })) };
+    },
+    async createThread(f) { const p = need(); const t = { id: uid(), author_id: p.id, title: f.title.trim(), body: f.body || "", topic: (f.topic || "").trim() || null, essay_slug: f.essay_slug || null, created_at: new Date().toISOString() }; db.threads.push(t); db.tvotes[p.id + "|" + t.id] = 1; save(); return threadOut(t); },
+    async createReply(f) { const p = need(); const r = { id: uid(), thread_id: f.thread_id, parent_id: f.parent_id || null, author_id: p.id, body: f.body, created_at: new Date().toISOString() }; db.replies.push(r); db.rvotes[p.id + "|" + r.id] = 1; save(); return r; },
+    async deleteThread(id) { db.threads = db.threads.filter(t => t.id !== id); db.replies = db.replies.filter(r => r.thread_id !== id); save(); },
+    async deleteReply(id) { const kill = new Set([id]); let grew = true; while (grew) { grew = false; for (const r of db.replies) if (r.parent_id && kill.has(r.parent_id) && !kill.has(r.id)) { kill.add(r.id); grew = true; } } db.replies = db.replies.filter(r => !kill.has(r.id)); save(); },
+    async vote(kind, id, value) { const p = need(); const m = kind === "thread" ? db.tvotes : db.rvotes; const k = p.id + "|" + id; if (value) m[k] = value; else delete m[k]; save(); },
+    async subscribe(email) { if (!db.subs.includes(email)) db.subs.push(email); save(); },
+    async members() { return Object.values(db.profiles).filter(p => !p.sample).map(p => ({ id: p.id, handle: p.handle, display_name: p.display_name, role: p.role, x_handle: p.x_handle })); },
+    async setRole(id, role) { if (db.profiles[id]) db.profiles[id].role = role; save(); listener(); },
+    async subscriberList() { return db.subs.slice(); }
+  };
+
+  function seed() {
+    const t = (d, h = 0) => new Date(Date.now() - d * 864e5 - h * 36e5).toISOString();
+    const P = { house: { id: "house", handle: "ballardian", display_name: "Ballardian", role: "admin", sample: true }, a: { id: "a", handle: "m_okafor", display_name: "M. Okafor", x_handle: "example", role: "writer", sample: true }, b: { id: "b", handle: "lena_v", display_name: "Lena V.", role: "member", sample: true }, c: { id: "c", handle: "third_runway", display_name: "third_runway", role: "member", sample: true } };
+    return {
+      v: 1, me: null, profiles: P, subs: [], tvotes: {}, rvotes: {},
+      essays: [
+        { id: "e1", slug: "sample-how-this-place-works", author_id: "house", sample: true, status: "published", published_at: t(1), updated_at: t(1), title: "How this place works", subtitle: "A sample essay, here to show the layout. Delete it when the first real one goes up.",
+          body: "Ballardian has two rooms and they are kept apart on purpose.\n\n## Essays\n\nEssays are long, signed and finished. A writer publishes one, it gets a permanent link, and readers can share it. Writing here uses plain Markdown: a line starting with `##` becomes a heading, `>` makes a quotation, and **bold**, *italic* and [links](https://ballardian.ai) work as you would expect.\n\n> A quotation sits like this, set off from the argument around it.\n\n## Threads\n\nThreads are short and unfinished. Anyone with an account can start one, reply to one, and vote replies up or down. A thread can be started from the foot of any essay, but the conversation lives in its own tab and never appears under the essay itself.\n\n## Accounts\n\nYou sign in with an email link. Connecting an X account is optional: it shows your handle beside your name and nothing else.\n\n---\n\nThe third tab is about J.G. Ballard, whose name the site borrows." },
+        { id: "e2", slug: "sample-the-view-from-the-car-park", author_id: "a", sample: true, status: "published", published_at: t(6), updated_at: t(6), title: "The view from the car park", subtitle: "A second sample, to show how a list of essays reads.",
+          body: "This is placeholder text standing in for a real essay. It exists so the list has more than one entry and the reading page can be judged at a realistic length.\n\nA real piece would open with its claim, spend a few paragraphs earning it, and leave the reader with something to argue about in the other tab.\n\n- A list looks like this.\n- It is useful about once per essay.\n\nReplace or delete this sample from your account page." }
+      ],
+      threads: [
+        { id: "t1", author_id: "b", sample: true, base: 14, created_at: t(0, 5), topic: "Site", title: "Sample thread: what should be argued about here first?", body: "This thread is a placeholder showing how a post, its votes and nested replies look. Delete it from the thread page." },
+        { id: "t2", author_id: "c", sample: true, base: 6, created_at: t(2), topic: "Cities", title: "Sample thread: the most Ballardian building you have been inside", body: "Placeholder text. Mine is a multi-storey car park with a wedding venue on the roof." },
+        { id: "t3", author_id: "a", sample: true, base: 3, created_at: t(4), topic: "Essays", essay_slug: "sample-the-view-from-the-car-park", title: "Sample thread: discussing “The view from the car park”", body: "A thread started from the foot of an essay links back to it, like this one." }
+      ],
+      replies: [
+        { id: "r1", thread_id: "t1", parent_id: null, author_id: "c", base: 5, created_at: t(0, 4), body: "Sample reply. Replies can be voted on separately from the post." },
+        { id: "r2", thread_id: "t1", parent_id: "r1", author_id: "b", base: 2, created_at: t(0, 3), body: "Sample nested reply, one level down." },
+        { id: "r3", thread_id: "t1", parent_id: "r2", author_id: "a", base: 1, created_at: t(0, 2), body: "And another level, to show how deep conversations indent." },
+        { id: "r4", thread_id: "t1", parent_id: null, author_id: "a", base: 1, created_at: t(0, 1), body: "A second top-level sample reply." },
+        { id: "r5", thread_id: "t2", parent_id: null, author_id: "b", base: 2, created_at: t(1), body: "Sample reply." }
+      ]
+    };
+  }
+}
+
+async function liveApi() {
+  await new Promise((res, rej) => { const s = document.createElement("script"); s.src = SUPABASE_JS; s.onload = res; s.onerror = () => rej(new Error("Could not load the account library.")); document.head.append(s); });
+  const sb = window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseAnonKey);
+  let me = null, session = null, listener = () => {};
+  const ok = r => { if (r.error) { const e = new Error(r.error.code === "23505" ? "That one is already taken." : r.error.message || "Something went wrong."); e.code = r.error.code; throw e; } return r.data; };
+  const need = () => { if (!me) throw new Error("Sign in first."); return me; };
+  const AUTHOR = "author:profiles(handle,display_name,x_handle,avatar_url)";
+  async function refresh(s) {
+    session = s;
+    if (!s) { me = null; listener(); return; }
+    try { await sb.rpc("sync_x"); } catch (e) {}
+    const r = await sb.from("profiles").select("*").eq("id", s.user.id).maybeSingle();
+    me = r.data || null; listener();
+  }
+  return {
+    mode: "live",
+    async init(cb) {
+      listener = cb;
+      const r = await sb.auth.getSession();
+      await refresh(r.data ? r.data.session : null);
+      sb.auth.onAuthStateChange((ev, s) => { if ((s && s.user.id) !== (session && session.user.id) || ev === "USER_UPDATED") setTimeout(() => refresh(s), 0); });
+    },
+    me: () => me,
+    async signInEmail(email) { ok(await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: siteBase() } })); return { sent: true }; },
+    async signInX() { ok(await sb.auth.signInWithOAuth({ provider: "x", options: { redirectTo: siteBase() } })); },
+    async linkX() { ok(await sb.auth.linkIdentity({ provider: "x", options: { redirectTo: siteBase() } })); },
+    async unlinkX() {
+      const ids = ok(await sb.auth.getUserIdentities()).identities || [];
+      const x = ids.find(i => i.provider === "x" || i.provider === "twitter");
+      if (x) ok(await sb.auth.unlinkIdentity(x));
+      const r = await sb.auth.getSession(); await refresh(r.data.session);
+    },
+    async signOut() { await sb.auth.signOut(); await refresh(null); },
+    async updateProfile(f) {
+      const p = need();
+      if (!/^[a-z0-9_]{2,24}$/.test(f.handle)) throw new Error("Handles use 2 to 24 lowercase letters, numbers or underscores.");
+      try { ok(await sb.from("profiles").update({ handle: f.handle, display_name: f.display_name.trim() || f.handle, bio: f.bio || "" }).eq("id", p.id)); }
+      catch (e) { if (e.code === "23505") throw new Error("That handle is taken."); throw e; }
+      await refresh(session);
+    },
+    async essays() { return ok(await sb.from("essays").select("id,slug,title,subtitle,status,published_at,updated_at,word_count,excerpt,author_id," + AUTHOR).eq("status", "published").order("published_at", { ascending: false }).limit(200)); },
+    async essay(slug) { return ok(await sb.from("essays").select("*," + AUTHOR).eq("slug", slug).maybeSingle()); },
+    async essayById(id) { return ok(await sb.from("essays").select("*," + AUTHOR).eq("id", id).maybeSingle()); },
+    async myEssays() { const p = need(); return ok(await sb.from("essays").select("id,slug,title,subtitle,status,published_at,updated_at,word_count,excerpt,author_id").eq("author_id", p.id).order("updated_at", { ascending: false })); },
+    async saveEssay(f) {
+      need();
+      const row = { title: f.title.trim(), subtitle: (f.subtitle || "").trim(), body: f.body, status: f.status };
+      if (f.id) return ok(await sb.from("essays").update(row).eq("id", f.id).select("*").single());
+      let slug = slugify(f.title);
+      for (let i = 0; i < 4; i++) {
+        const r = await sb.from("essays").insert({ ...row, slug }).select("*").single();
+        if (!r.error) return r.data;
+        if (r.error.code !== "23505") ok(r);
+        slug = slugify(f.title) + "-" + Math.random().toString(36).slice(2, 5);
+      }
+      throw new Error("Could not find a free address for that title. Change the title slightly and try again.");
+    },
+    async deleteEssay(id) { ok(await sb.from("essays").delete().eq("id", id)); },
+    async threads() {
+      const rows = ok(await sb.from("threads").select("id,title,body,topic,essay_slug,score,reply_count,created_at,author_id," + AUTHOR).order("created_at", { ascending: false }).limit(300));
+      const mine = {};
+      if (me) for (const v of ok(await sb.from("thread_votes").select("thread_id,value").eq("user_id", me.id))) mine[v.thread_id] = v.value;
+      return rows.map(t => ({ ...t, my_vote: mine[t.id] || 0 }));
+    },
+    async thread(id) {
+      const t = ok(await sb.from("threads").select("id,title,body,topic,essay_slug,score,reply_count,created_at,author_id," + AUTHOR).eq("id", id).maybeSingle());
+      if (!t) return null;
+      const replies = ok(await sb.from("replies").select("id,thread_id,parent_id,body,score,created_at,author_id," + AUTHOR).eq("thread_id", id).order("created_at", { ascending: true }).limit(2000));
+      const mine = {}; t.my_vote = 0;
+      if (me) {
+        const tv = ok(await sb.from("thread_votes").select("value").eq("user_id", me.id).eq("thread_id", id).maybeSingle()); if (tv) t.my_vote = tv.value;
+        for (const v of ok(await sb.from("reply_votes").select("reply_id,value").eq("user_id", me.id).eq("thread_id", id))) mine[v.reply_id] = v.value;
+      }
+      return { thread: t, replies: replies.map(r => ({ ...r, my_vote: mine[r.id] || 0 })) };
+    },
+    async createThread(f) {
+      const p = need();
+      const t = ok(await sb.from("threads").insert({ title: f.title.trim(), body: f.body || "", topic: (f.topic || "").trim() || null, essay_slug: f.essay_slug || null }).select("id").single());
+      await sb.from("thread_votes").insert({ user_id: p.id, thread_id: t.id, value: 1 });
+      return t;
+    },
+    async createReply(f) {
+      const p = need();
+      const r = ok(await sb.from("replies").insert({ thread_id: f.thread_id, parent_id: f.parent_id || null, body: f.body }).select("id").single());
+      await sb.from("reply_votes").insert({ user_id: p.id, reply_id: r.id, thread_id: f.thread_id, value: 1 });
+      return r;
+    },
+    async deleteThread(id) { ok(await sb.from("threads").delete().eq("id", id)); },
+    async deleteReply(id) { ok(await sb.from("replies").delete().eq("id", id)); },
+    async vote(kind, id, value, threadId) {
+      const p = need();
+      if (kind === "thread") {
+        if (!value) ok(await sb.from("thread_votes").delete().eq("user_id", p.id).eq("thread_id", id));
+        else ok(await sb.from("thread_votes").upsert({ user_id: p.id, thread_id: id, value }, { onConflict: "user_id,thread_id" }));
+      } else {
+        if (!value) ok(await sb.from("reply_votes").delete().eq("user_id", p.id).eq("reply_id", id));
+        else ok(await sb.from("reply_votes").upsert({ user_id: p.id, reply_id: id, thread_id: threadId, value }, { onConflict: "user_id,reply_id" }));
+      }
+    },
+    async subscribe(email) { ok(await sb.rpc("subscribe", { addr: email })); },
+    async members() { return ok(await sb.from("profiles").select("id,handle,display_name,role,x_handle").order("created_at", { ascending: true }).limit(500)); },
+    async setRole(id, role) { ok(await sb.rpc("set_role", { target: id, new_role: role })); },
+    async subscriberList() { return ok(await sb.from("subscribers").select("email").order("created_at", { ascending: true })).map(r => r.email); }
+  };
+}
+
+/* =====================================================================
+ *  VIEWS
+ * ===================================================================== */
+let api = null;
+const view = document.getElementById("view");
+const state = { sort: "hot", topic: null, token: 0 };
+const canWrite = () => { const m = api.me(); return !!m && (m.role === "writer" || m.role === "admin"); };
+const isAdmin = () => { const m = api.me(); return !!m && m.role === "admin"; };
+const mine = row => { const m = api.me(); return !!m && (row.author_id === m.id || m.role === "admin"); };
+
+function byline(a) {
+  const out = [h("span", null, a.display_name || a.handle)];
+  if (a.x_handle) out.push(" ", h("a", { class: "xh", href: "https://x.com/" + encodeURIComponent(a.x_handle), target: "_blank", rel: "noopener" }, "@" + a.x_handle));
+  return h("span", null, out);
+}
+function setStatus(el, msg, kind) { el.textContent = msg || ""; el.className = "status" + (kind ? " " + kind : ""); }
+async function run(btn, statusEl, fn) {
+  if (btn) btn.disabled = true; if (statusEl) setStatus(statusEl, "Working.");
+  try { await fn(); } catch (e) { if (statusEl) setStatus(statusEl, e.message || String(e), "err"); else console.error(e); } finally { if (btn) btn.disabled = false; }
+}
+function confirmBtn(label, onYes, cls) {
+  let armed = false, timer;
+  const b = h("button", { class: cls || "linkbtn danger", type: "button", onclick: () => {
+    if (!armed) { armed = true; b.textContent = "Click again to confirm"; timer = setTimeout(() => { armed = false; b.textContent = label; }, 4000); return; }
+    clearTimeout(timer); b.disabled = true; onYes();
+  } }, label);
+  return b;
+}
+const chev = up => h("span", { html: '<svg viewBox="0 0 16 10" aria-hidden="true"><path d="' + (up ? "M1 9 8 1l7 8" : "M1 1l7 8 7-8") + '" fill="none" stroke="currentColor" stroke-width="2.4"/></svg>' });
+function votes(kind, row, threadId) {
+  const n = h("span", { class: "n" }, row.score);
+  const up = h("button", { class: "up", type: "button", "aria-label": "Vote up", "aria-pressed": String(row.my_vote === 1) }, chev(true));
+  const down = h("button", { class: "down", type: "button", "aria-label": "Vote down", "aria-pressed": String(row.my_vote === -1) }, chev(false));
+  const cast = async dir => {
+    if (!api.me()) { location.hash = "account"; return; }
+    const next = row.my_vote === dir ? 0 : dir, prev = row.my_vote;
+    row.score += next - prev; row.my_vote = next; paint();
+    try { await api.vote(kind, row.id, next, threadId); } catch (e) { row.score -= next - prev; row.my_vote = prev; paint(); }
+  };
+  const paint = () => { n.textContent = row.score; up.setAttribute("aria-pressed", String(row.my_vote === 1)); down.setAttribute("aria-pressed", String(row.my_vote === -1)); };
+  up.addEventListener("click", () => cast(1)); down.addEventListener("click", () => cast(-1));
+  return h("div", { class: "votes" }, up, n, down);
+}
+const field = (id, labelText, control, hint) => h("div", { class: "field" }, h("label", { for: id }, labelText), control, hint ? h("p", { class: "hint" }, hint) : null);
+
+/* ---------- Essays ---------- */
+async function viewEssays() {
+  const list = await api.essays();
+  const head = h("div", { class: "head" },
+    h("div", null, h("h1", null, "Essays"), h("p", null, "Long, signed and finished.")),
+    canWrite() ? h("a", { class: "btn", href: "#write" }, "Write an essay") : null);
+  const ul = h("ul", { class: "essay-list" }, list.map(e => h("li", null,
+    h("a", { class: "t", href: "#essay-" + e.slug }, h("h2", null, e.title), e.subtitle ? h("p", { class: "sub" }, e.subtitle) : null),
+    e.excerpt ? h("p", { class: "ex" }, e.excerpt + (e.excerpt.length >= 220 ? "…" : "")) : null,
+    h("p", { class: "meta" }, e.sample ? h("span", { class: "tag sample" }, "Sample") : null, byline(e.author), h("span", null, longDate(e.published_at)), h("span", null, readTime(e.word_count || 0))))));
+  const email = h("input", { type: "email", id: "sub-email", placeholder: "you@example.com", autocomplete: "email", required: true });
+  const st = h("p", { class: "status", role: "status" });
+  const form = h("form", { class: "subscribe", onsubmit: ev => { ev.preventDefault(); const v = email.value.trim(); run(form.querySelector("button"), st, async () => { if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)) throw new Error("That does not look like an email address."); await api.subscribe(v); email.value = ""; setStatus(st, "Noted. You will hear when a new essay goes up.", "ok"); }); } },
+    h("h3", null, "New essays by email"), h("label", { for: "sub-email" }, "Email address"),
+    h("div", { class: "row" }, email, h("button", { class: "btn", type: "submit" }, "Subscribe")), st);
+  return [head, list.length ? ul : h("p", { class: "empty" }, "Nothing published yet."), form];
+}
+
+async function viewEssay(slug) {
+  const e = await api.essay(slug);
+  if (!e) return notFound("That essay is not here. It may have been unpublished.", "#essays", "All essays");
+  document.title = e.title + " · Ballardian";
+  const st = h("p", { class: "status", role: "status" });
+  const copy = h("button", { class: "btn ghost", type: "button", onclick: async () => { try { await navigator.clipboard.writeText(siteBase() + "#essay-" + e.slug); setStatus(st, "Link copied.", "ok"); } catch (x) { setStatus(st, siteBase() + "#essay-" + e.slug); } } }, "Copy link");
+  return h("article", { class: "essay" },
+    h("a", { class: "back", href: "#essays" }, "← Essays"),
+    h("header", null,
+      h("h1", null, e.title), e.subtitle ? h("p", { class: "sub" }, e.subtitle) : null,
+      h("p", { class: "meta" }, e.status === "draft" ? h("span", { class: "tag sample" }, "Draft") : null, e.sample ? h("span", { class: "tag sample" }, "Sample") : null, byline(e.author), e.published_at ? h("span", null, longDate(e.published_at)) : null, h("span", null, readTime(e.word_count != null ? e.word_count : words(e.body))))),
+    h("div", { class: "prose", html: md(e.body) }),
+    h("div", { class: "actions" },
+      h("div", { class: "row" },
+        h("a", { class: "btn", href: shareUrl(e.title, "essay-" + e.slug), target: "_blank", rel: "noopener" }, "Share on X"), copy,
+        h("a", { class: "btn ghost", href: "#threads", onclick: () => { state.prefill = { title: "On “" + e.title + "”", essay_slug: e.slug, topic: "Essays" }; } }, "Start a thread about this"),
+        mine(e) ? h("a", { class: "btn ghost", href: "#edit-" + e.id }, "Edit") : null),
+      st));
+}
+
+async function viewWrite(id) {
+  if (!api.me()) return gate("Sign in to write.");
+  if (!canWrite()) return notFound("Essays are published by invited writers. Threads are open to everyone with an account.", "#threads", "Go to Threads");
+  let e = { title: "", subtitle: "", body: "", status: "draft" };
+  if (id) { e = await api.essayById(id); if (!e || !mine(e)) return notFound("That draft is not here.", "#account", "Your account"); }
+  const title = h("input", { type: "text", id: "w-title", maxlength: "200", value: e.title, placeholder: "Title" });
+  const sub = h("input", { type: "text", id: "w-sub", maxlength: "300", value: e.subtitle || "", placeholder: "One line under the title (optional)" });
+  const body = h("textarea", { id: "w-body", style: "min-height:420px", placeholder: "Write here. Plain Markdown: ## heading, > quotation, **bold**, *italic*, [link text](https://…)" }); body.value = e.body || "";
+  const st = h("p", { class: "status", role: "status" });
+  const prev = h("div", { class: "prose", hidden: true });
+  const count = h("span", { class: "meta" });
+  const tick = () => { const n = words(body.value); count.textContent = n + " words · " + readTime(n); }; body.addEventListener("input", tick); tick();
+  const toggle = h("button", { class: "btn ghost small", type: "button", onclick: () => { const show = prev.hidden; prev.hidden = !show; body.hidden = show; if (show) prev.innerHTML = md(body.value) || "<p><em>Nothing to preview yet.</em></p>"; toggle.textContent = show ? "Back to editing" : "Preview"; } }, "Preview");
+  const save = status => async ev => run(ev.currentTarget, st, async () => {
+    if (!title.value.trim()) throw new Error("Give the essay a title.");
+    if (status === "published" && words(body.value) < 1) throw new Error("There is nothing to publish yet.");
+    const saved = await api.saveEssay({ id: e.id, title: title.value, subtitle: sub.value, body: body.value, status });
+    e = { ...e, ...saved };
+    if (status === "published") location.hash = "essay-" + saved.slug; else { setStatus(st, "Draft saved " + new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) + ".", "ok"); if (!id) history.replaceState(null, "", "#edit-" + saved.id); }
+  });
+  return [
+    h("div", { class: "head" }, h("div", null, h("h1", null, id ? "Edit essay" : "New essay"), h("p", null, e.status === "published" ? "This essay is live. Saving updates it straight away." : "Drafts are visible only to you."))),
+    h("div", { style: "max-width:44em;margin-top:20px" },
+      field("w-title", "Title", title), field("w-sub", "Subtitle", sub),
+      h("div", { class: "field" }, h("div", { class: "row", style: "justify-content:space-between;margin-bottom:5px" }, h("label", { for: "w-body", style: "margin:0" }, "Essay"), h("div", { class: "row" }, count, toggle)), body, prev),
+      h("div", { class: "row" },
+        h("button", { class: "btn", type: "button", onclick: save("published") }, e.status === "published" ? "Update essay" : "Publish"),
+        e.status === "published" ? h("button", { class: "btn ghost", type: "button", onclick: save("draft") }, "Unpublish to draft") : h("button", { class: "btn ghost", type: "button", onclick: save("draft") }, "Save draft"),
+        id ? confirmBtn("Delete essay", () => run(null, st, async () => { await api.deleteEssay(e.id); location.hash = "account"; })) : null),
+      st)
+  ];
+}
+
+/* ---------- Threads ---------- */
+const hot = t => (t.score + 1) / Math.pow((Date.now() - new Date(t.created_at).getTime()) / 36e5 + 2, 1.5);
+async function viewThreads() {
+  const all = await api.threads();
+  const topics = [...new Set(all.map(t => t.topic).filter(Boolean))].sort();
+  if (state.topic && !topics.includes(state.topic)) state.topic = null;
+  const ul = h("ul", { class: "t-list" });
+  const sorts = h("div", { class: "sorts" });
+  const paint = () => {
+    let rows = all.filter(t => !state.topic || t.topic === state.topic);
+    rows.sort(state.sort === "new" ? (a, b) => new Date(b.created_at) - new Date(a.created_at) : state.sort === "top" ? (a, b) => b.score - a.score || new Date(b.created_at) - new Date(a.created_at) : (a, b) => hot(b) - hot(a));
+    ul.replaceChildren(...rows.map(t => h("li", { class: "t-row" }, votes("thread", t),
+      h("div", null, h("h2", null, h("a", { href: "#thread-" + t.id }, t.title)),
+        h("p", { class: "meta" }, t.sample ? h("span", { class: "tag sample" }, "Sample") : null, t.topic ? h("button", { class: "tag", type: "button", onclick: () => { state.topic = t.topic; paint(); } }, t.topic) : null, byline(t.author), h("span", null, ago(t.created_at)), h("a", { href: "#thread-" + t.id }, t.reply_count + (t.reply_count === 1 ? " reply" : " replies")))))));
+    if (!rows.length) ul.append(h("li", { class: "empty" }, "No threads yet. Start one."));
+    sorts.replaceChildren(h("span", { class: "eyebrow" }, "Sort"), ...["hot", "new", "top"].map(s => h("button", { class: "tag" + (state.sort === s ? " on" : ""), type: "button", onclick: () => { state.sort = s; paint(); } }, s)),
+      topics.length ? h("span", { class: "eyebrow", style: "margin-left:10px" }, "Topic") : null, ...topics.map(tp => h("button", { class: "tag" + (state.topic === tp ? " on" : ""), type: "button", onclick: () => { state.topic = state.topic === tp ? null : tp; paint(); } }, tp)));
+  };
+  paint();
+  const pre = state.prefill; state.prefill = null;
+  const box = h("div", { hidden: !pre });
+  const openBtn = h("button", { class: "btn", type: "button", onclick: () => { if (!api.me()) { location.hash = "account"; return; } box.hidden = !box.hidden; if (!box.hidden) box.querySelector("input").focus(); } }, "New thread");
+  if (pre && !api.me()) box.hidden = true;
+  const title = h("input", { type: "text", id: "t-title", maxlength: "200", placeholder: "What is the thread about?", value: pre ? pre.title : "" });
+  const topic = h("input", { type: "text", id: "t-topic", maxlength: "24", placeholder: "One word, optional", value: pre ? pre.topic : "" });
+  const body = h("textarea", { id: "t-body", maxlength: "10000", placeholder: "Say more (optional). Markdown works." });
+  const st = h("p", { class: "status", role: "status" });
+  box.append(h("form", { class: "composer", onsubmit: ev => { ev.preventDefault(); run(ev.submitter, st, async () => { if (title.value.trim().length < 4) throw new Error("Give the thread a title of at least four characters."); const t = await api.createThread({ title: title.value, body: body.value, topic: topic.value, essay_slug: pre ? pre.essay_slug : null }); location.hash = "thread-" + t.id; }); } },
+    field("t-title", "Title", title), h("div", { style: "max-width:220px" }, field("t-topic", "Topic", topic)), field("t-body", "Post", body),
+    h("div", { class: "row" }, h("button", { class: "btn", type: "submit" }, "Post thread"), h("button", { class: "btn ghost", type: "button", onclick: () => { box.hidden = true; } }, "Cancel")), st));
+  return [h("div", { class: "head" }, h("div", null, h("h1", null, "Threads"), h("p", null, "Short, unfinished and open to reply.")), openBtn), box, sorts, ul];
+}
+
+async function viewThread(id) {
+  const data = await api.thread(id);
+  if (!data) return notFound("That thread is not here. It may have been deleted.", "#threads", "All threads");
+  const t = data.thread; document.title = t.title + " · Ballardian";
+  const kids = {}; for (const r of data.replies) (kids[r.parent_id || "root"] = kids[r.parent_id || "root"] || []).push(r);
+  const order = arr => arr.slice().sort((a, b) => b.score - a.score || new Date(a.created_at) - new Date(b.created_at));
+  const st = h("p", { class: "status", role: "status" });
+  const replyForm = (parentId, onDone) => {
+    const ta = h("textarea", { id: "rb-" + (parentId || "root"), maxlength: "5000", placeholder: parentId ? "Reply" : "Add to the thread", "aria-label": "Your reply" });
+    const s = h("p", { class: "status", role: "status" });
+    return h("form", { class: "replybox", onsubmit: ev => { ev.preventDefault(); run(ev.submitter, s, async () => { if (!ta.value.trim()) throw new Error("Write something first."); await api.createReply({ thread_id: t.id, parent_id: parentId, body: ta.value.trim() }); await render(); }); } },
+      ta, h("div", { class: "row", style: "margin-top:8px" }, h("button", { class: "btn small", type: "submit" }, "Reply"), onDone ? h("button", { class: "btn ghost small", type: "button", onclick: onDone }, "Cancel") : null), s);
+  };
+  const node = (r, depth) => {
+    const slot = h("div");
+    const tools = h("div", { class: "tools" },
+      h("button", { class: "linkbtn", type: "button", onclick: () => { if (!api.me()) { location.hash = "account"; return; } if (slot.firstChild) slot.replaceChildren(); else { slot.append(replyForm(r.id, () => slot.replaceChildren())); slot.querySelector("textarea").focus(); } } }, "Reply"),
+      mine(r) ? confirmBtn("Delete", () => run(null, st, async () => { await api.deleteReply(r.id); await render(); })) : null);
+    return h("li", { class: "reply" }, votes("reply", r, t.id),
+      h("div", null, h("p", { class: "meta" }, byline(r.author), h("span", null, ago(r.created_at))), h("div", { class: "prose small body", html: md(r.body) }), tools, slot),
+      kids[r.id] ? h("ul", { class: "kids" }, order(kids[r.id]).map(k => node(k, depth + 1))) : null);
+  };
+  return [
+    h("a", { class: "back", href: "#threads" }, "← Threads"),
+    h("div", { class: "thread-top", style: "margin-top:14px" }, votes("thread", t),
+      h("div", null, h("h1", null, t.title),
+        h("p", { class: "meta" }, t.sample ? h("span", { class: "tag sample" }, "Sample") : null, t.topic ? h("span", { class: "tag sample" }, t.topic) : null, byline(t.author), h("span", null, ago(t.created_at)),
+          t.essay_slug ? h("a", { href: "#essay-" + t.essay_slug }, "About an essay →") : null),
+        t.body ? h("div", { class: "prose small", html: md(t.body) }) : null,
+        h("div", { class: "row", style: "margin-top:14px;gap:16px" },
+          h("a", { class: "linkbtn", href: shareUrl(t.title, "thread-" + t.id), target: "_blank", rel: "noopener", style: "text-decoration:none" }, "Share on X"),
+          mine(t) ? confirmBtn("Delete thread", () => run(null, st, async () => { await api.deleteThread(t.id); location.hash = "threads"; })) : null), st)),
+    h("p", { class: "eyebrow", style: "margin:20px 0 0" }, data.replies.length + (data.replies.length === 1 ? " reply" : " replies")),
+    api.me() ? replyForm(null) : h("p", { style: "margin:12px 0 0" }, h("a", { class: "btn small", href: "#account" }, "Sign in to reply")),
+    h("ul", { class: "replies" }, order(kids.root || []).map(r => node(r, 0)))
+  ];
+}
+
+/* ---------- J.G. Ballard ---------- */
+function viewBallard() {
+  document.title = "J.G. Ballard · Ballardian";
+  const life = [
+    ["1930", "Born James Graham Ballard on 15 November in the Shanghai International Settlement, the son of James and Edna Ballard."],
+    ["1943–45", "Interned with his parents and sister at the Lunghua Civilian Assembly Centre, south of Shanghai, until the end of the war."],
+    ["1946", "Arrives in England, a country he has never seen. Boards at The Leys School, Cambridge."],
+    ["1949", "Reads medicine at King’s College, Cambridge, intending to become a psychiatrist. Leaves after two years to write."],
+    ["1954", "Joins the Royal Air Force and trains as a pilot in Canada, where he finds American science-fiction magazines."],
+    ["1955", "Marries Mary Matthews. They have three children."],
+    ["1956", "His first stories appear in ", ["i", "New Worlds"], " and ", ["i", "Science Fantasy"], "."],
+    ["1960", "Moves to Shepperton, on the western edge of London. It is his home for the rest of his life."],
+    ["1962", ["i", "The Drowned World"], " makes his name."],
+    ["1964", "Mary dies suddenly on a family holiday in Spain. He brings up their children alone."],
+    ["1970–75", ["i", "The Atrocity Exhibition"], ", ", ["i", "Crash"], ", ", ["i", "Concrete Island"], " and ", ["i", "High-Rise"], ": the books that turn from outer space to what he called inner space."],
+    ["1984", ["i", "Empire of the Sun"], ", drawn from his Shanghai childhood, wins the Guardian Fiction Prize and the James Tait Black Memorial Prize and is shortlisted for the Booker. Steven Spielberg films it in 1987."],
+    ["1996", "David Cronenberg’s film of ", ["i", "Crash"], " wins the Special Jury Prize at Cannes."],
+    ["2008", "Publishes his memoir, ", ["i", "Miracles of Life"], "."],
+    ["2009", "Dies in London on 19 April, aged 78."],
+    ["2010", "His papers are acquired for the nation and placed in the British Library."]
+  ];
+  const novels = [["1961", "The Wind from Nowhere"], ["1962", "The Drowned World"], ["1964", "The Burning World (The Drought)"], ["1966", "The Crystal World"], ["1970", "The Atrocity Exhibition"], ["1973", "Crash"], ["1974", "Concrete Island"], ["1975", "High-Rise"], ["1979", "The Unlimited Dream Company"], ["1981", "Hello America"], ["1984", "Empire of the Sun"], ["1987", "The Day of Creation"], ["1988", "Running Wild"], ["1991", "The Kindness of Women"], ["1994", "Rushing to Paradise"], ["1996", "Cocaine Nights"], ["2000", "Super-Cannes"], ["2003", "Millennium People"], ["2006", "Kingdom Come"]];
+  const other = [["1962", "The Voices of Time"], ["1964", "The Terminal Beach"], ["1971", "Vermilion Sands"], ["1982", "Myths of the Near Future"], ["1996", "A User’s Guide to the Millennium (essays and reviews)"], ["2001", "The Complete Short Stories"], ["2008", "Miracles of Life (memoir)"]];
+  const part = p => (Array.isArray(p) ? h(p[0], null, p[1]) : p);
+  return [
+    h("div", { class: "jgb-head" }, h("h1", null, "J.G. Ballard"), h("p", { class: "years" }, "15 November 1930 – 19 April 2009")),
+    h("div", { class: "jgb" },
+      h("section", null,
+        h("p", { class: "lede" }, "Novelist, short-story writer and essayist. He wrote about what motorways, tower blocks, television and advertising were doing to the people who lived among them, and he was usually a decade or two early."),
+        h("p", null, "The dictionaries caught up. Collins lists the adjective Ballardian for the world his fiction describes: modern, man-made, and at work on the minds of the people inside it. This site takes its name from that word."),
+        h("h2", null, "A life"),
+        h("ul", { class: "years-list" }, life.map(r => h("li", null, h("span", { class: "y" }, r[0]), h("span", null, r.slice(1).map(part)))))),
+      h("section", null,
+        h("h2", null, "Novels"),
+        h("ul", { class: "years-list books" }, novels.map(r => h("li", null, h("span", { class: "y" }, r[0]), h("i", null, r[1])))),
+        h("h2", null, "Stories, essays and memoir"),
+        h("ul", { class: "years-list books" }, other.map(r => h("li", null, h("span", { class: "y" }, r[0]), h("i", null, r[1])))),
+        h("h2", null, "On screen"),
+        h("ul", { class: "years-list books" }, [["1987", "Empire of the Sun", "dir. Steven Spielberg"], ["1996", "Crash", "dir. David Cronenberg"], ["2015", "High-Rise", "dir. Ben Wheatley"]].map(r => h("li", null, h("span", { class: "y" }, r[0]), h("span", null, h("i", null, r[1]), ", " + r[2])))),
+        h("h2", null, "The covers"),
+        h("p", { style: "font-size:16.5px;color:var(--muted)" }, "The jackets behind this page are from editions of his books published between the 1960s and the present.")))
+  ];
+}
+
+/* ---------- Account ---------- */
+async function viewAccount() {
+  const me = api.me(); const live = api.mode === "live";
+  if (!me) {
+    const input = live ? h("input", { type: "email", id: "si-email", autocomplete: "email", placeholder: "you@example.com", required: true }) : h("input", { type: "text", id: "si-email", placeholder: "A name to post under", maxlength: "40", required: true });
+    const st = h("p", { class: "status", role: "status" });
+    const xst = h("p", { class: "status", role: "status" });
+    return [
+      h("div", { class: "head" }, h("div", null, h("h1", null, "Sign in"), h("p", null, live ? "No password. We email you a link and you are in." : "Preview sign-in. Pick any name; nothing leaves this browser."))),
+      h("form", { class: "form", style: "margin-top:22px", onsubmit: ev => { ev.preventDefault(); run(ev.submitter, st, async () => { const r = await api.signInEmail(input.value.trim()); if (r.sent) setStatus(st, "Check your inbox for the sign-in link. It can take a minute.", "ok"); }); } },
+        field("si-email", live ? "Email address" : "Name", input), h("div", null, h("button", { class: "btn", type: "submit" }, live ? "Email me a sign-in link" : "Sign in")), st),
+      h("p", { class: "or" }, "or"),
+      h("div", { class: "form" },
+        h("div", null, h("button", { class: "btn ghost", type: "button", disabled: live && !CONFIG.xSignIn, onclick: ev => run(ev.currentTarget, xst, () => api.signInX()) }, "Continue with X")),
+        h("p", { class: "hint" }, live && !CONFIG.xSignIn ? "X sign-in is not switched on yet. Email works now." : "Optional. Signing in with X shows your handle beside your name."), xst)
+    ];
+  }
+  const st = h("p", { class: "status", role: "status" });
+  const name = h("input", { type: "text", id: "p-name", maxlength: "60", value: me.display_name || "" });
+  const handle = h("input", { type: "text", id: "p-handle", maxlength: "24", value: me.handle || "", autocapitalize: "none", spellcheck: "false" });
+  const bio = h("textarea", { id: "p-bio", maxlength: "400", style: "min-height:84px" }); bio.value = me.bio || "";
+  const out = [
+    h("div", { class: "head" }, h("div", null, h("h1", null, "Account"), h("p", null, "Signed in as " + (me.display_name || me.handle) + " · " + me.role)),
+      h("button", { class: "btn ghost", type: "button", onclick: () => api.signOut() }, "Sign out")),
+    h("form", { class: "form", style: "margin-top:22px", onsubmit: ev => { ev.preventDefault(); run(ev.submitter, st, async () => { await api.updateProfile({ display_name: name.value, handle: handle.value.trim().toLowerCase(), bio: bio.value }); }); } },
+      /^reader\d{4,}$/.test(me.handle) ? h("p", { class: "hint", style: "margin:0 0 14px;color:var(--signal)" }, "You have a placeholder handle. Choose your own below.") : null,
+      field("p-name", "Name shown on your posts", name), field("p-handle", "Handle", handle, "Lowercase letters, numbers and underscores."), field("p-bio", "About (optional)", bio),
+      h("div", null, h("button", { class: "btn", type: "submit" }, "Save profile")), st)
+  ];
+  const xst = h("p", { class: "status", role: "status" });
+  out.push(h("section", { class: "panel" }, h("h2", null, "X account"),
+    me.x_handle
+      ? h("div", { class: "row" }, h("span", null, "Linked to ", h("a", { class: "xh", href: "https://x.com/" + encodeURIComponent(me.x_handle), target: "_blank", rel: "noopener" }, "@" + me.x_handle), ". It shows beside your name."), live ? h("button", { class: "linkbtn danger", type: "button", onclick: ev => run(ev.currentTarget, xst, () => api.unlinkX()) }, "Unlink") : null)
+      : h("div", null, h("p", { style: "margin:0 0 10px" }, "Optional. Link your X account to show your handle beside your name."),
+          h("button", { class: "btn ghost", type: "button", disabled: !live || !CONFIG.xSignIn, onclick: ev => run(ev.currentTarget, xst, () => api.linkX()) }, "Link X account"),
+          !live || !CONFIG.xSignIn ? h("p", { class: "hint" }, live ? "X linking is not switched on yet." : "X linking switches on with live accounts.") : null), xst));
+  if (canWrite()) {
+    const list = await api.myEssays();
+    out.push(h("section", { class: "panel" }, h("div", { class: "row", style: "justify-content:space-between;margin-bottom:12px" }, h("h2", { style: "font-stretch:88%;font-weight:700;font-size:22px" }, "Your essays"), h("a", { class: "btn small", href: "#write" }, "Write an essay")),
+      list.length ? h("div", { class: "scroll" }, h("table", { class: "plain" }, h("thead", null, h("tr", null, h("th", null, "Title"), h("th", null, "Status"), h("th", null, "Updated"), h("th", null, ""))),
+        h("tbody", null, list.map(e => h("tr", null, h("td", null, e.status === "published" ? h("a", { href: "#essay-" + e.slug }, e.title) : e.title), h("td", null, h("span", { class: "tag" + (e.status === "published" ? " sample" : ""), style: "cursor:default" }, e.status)), h("td", { style: "white-space:nowrap" }, ago(e.updated_at)), h("td", null, h("a", { class: "linkbtn", href: "#edit-" + e.id, style: "text-decoration:none" }, "Edit"))))))) : h("p", { class: "hint" }, "No essays or drafts yet.")));
+  } else {
+    out.push(h("section", { class: "panel" }, h("h2", null, "Writing essays"), h("p", { style: "margin:0;max-width:60ch" }, "Essays are published by invited writers. Threads are open to you now.")));
+  }
+  if (isAdmin()) {
+    const ast = h("p", { class: "status", role: "status" });
+    const [members, subs] = await Promise.all([api.members(), api.subscriberList().catch(() => [])]);
+    out.push(h("section", { class: "panel" }, h("h2", null, "Members (" + members.length + ")"), h("p", { class: "hint", style: "margin:0 0 10px" }, "Writers can publish essays. Admins can also remove any post and change roles."),
+      h("div", { class: "scroll" }, h("table", { class: "plain" }, h("thead", null, h("tr", null, h("th", null, "Name"), h("th", null, "Handle"), h("th", null, "X"), h("th", null, "Role"))),
+        h("tbody", null, members.map(m => { const sel = h("select", { "aria-label": "Role for " + m.handle, disabled: m.id === me.id, onchange: () => run(sel, ast, async () => { await api.setRole(m.id, sel.value); setStatus(ast, m.handle + " is now " + sel.value + ".", "ok"); }) }, ["member", "writer", "admin"].map(r => h("option", { value: r, selected: m.role === r }, r)));
+          return h("tr", null, h("td", null, m.display_name), h("td", null, m.handle), h("td", null, m.x_handle ? "@" + m.x_handle : "–"), h("td", null, sel)); })))), ast));
+    const sst = h("p", { class: "status", role: "status" });
+    out.push(h("section", { class: "panel" }, h("h2", null, "Email subscribers (" + subs.length + ")"),
+      subs.length ? h("div", { class: "row" }, h("button", { class: "btn ghost small", type: "button", onclick: async () => { try { await navigator.clipboard.writeText(subs.join("\n")); setStatus(sst, "Copied " + subs.length + " addresses.", "ok"); } catch (e) { setStatus(sst, subs.join(", ")); } } }, "Copy all addresses")) : h("p", { class: "hint", style: "margin:0" }, "Nobody has subscribed yet."), sst));
+  }
+  return out;
+}
+
+function notFound(msg, href, label) { return [h("p", { class: "empty" }, msg), h("a", { class: "btn", href }, label)]; }
+function gate(msg) { return [h("p", { class: "empty" }, msg), h("a", { class: "btn", href: "#account" }, "Sign in")]; }
+
+/* ---------- Router ---------- */
+function route() {
+  let x = decodeURIComponent(location.hash.replace(/^#/, ""));
+  if (!x || x.includes("=") || x.includes("/")) return { tab: "essays", fn: viewEssays };   // also swallows auth redirects
+  if (x === "essays") return { tab: "essays", fn: viewEssays };
+  if (x === "threads") return { tab: "threads", fn: viewThreads };
+  if (x === "ballard") return { tab: "ballard", fn: viewBallard };
+  if (x === "account") return { tab: "account", fn: viewAccount };
+  if (x === "write") return { tab: "essays", fn: () => viewWrite(null) };
+  if (x.startsWith("edit-")) return { tab: "essays", fn: () => viewWrite(x.slice(5)) };
+  if (x.startsWith("essay-")) return { tab: "essays", fn: () => viewEssay(x.slice(6)) };
+  if (x.startsWith("thread-")) return { tab: "threads", fn: () => viewThread(x.slice(7)) };
+  return { tab: "essays", fn: viewEssays };
+}
+async function render() {
+  const r = route(), token = ++state.token, me = api.me();
+  document.title = "Ballardian";
+  for (const a of document.querySelectorAll("#tabs .tab")) { if (a.dataset.tab === r.tab) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); }
+  const at = document.getElementById("acct-tab");
+  at.replaceChildren(...(me ? [h("span", { class: "dot" }), me.display_name || me.handle] : ["Sign in"]));
+  try {
+    const out = await r.fn();
+    if (token !== state.token) return;
+    view.replaceChildren(...[].concat(out));
+  } catch (e) {
+    if (token !== state.token) return;
+    view.replaceChildren(h("p", { class: "empty" }, "This page could not load. " + (e.message || "")), h("button", { class: "btn", type: "button", onclick: render }, "Try again"));
+  }
+}
+let lastHash = location.hash;
+window.addEventListener("hashchange", () => { lastHash = location.hash; render().then(() => window.scrollTo(0, 0)); });
+
+(async function start() {
+  const live = !!(CONFIG.supabaseUrl && CONFIG.supabaseAnonKey);
+  try { api = live ? await liveApi() : previewApi(); }
+  catch (e) { api = previewApi(); }
+  if (api.mode === "preview") { const n = document.getElementById("notice"); n.hidden = false; n.append(h("b", null, "Preview. "), "Accounts open shortly. Until then, anything you post is saved only in this browser."); }
+  try { await api.init(() => render()); } catch (e) {}
+  if (location.hash.includes("access_token=") || location.hash.includes("error_description=")) history.replaceState(null, "", location.pathname + location.search);
+  render();
+})();
+</script>
+</body>
+</html>
