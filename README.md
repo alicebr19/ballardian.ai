@@ -30,9 +30,13 @@ Nothing is copied across.
 A thread can point at a post on X, shown at the top of the thread, and any link to a
 post on X in a thread or reply is shown as the post itself.
 
-Ballard this week: an admin posts a line of J.G. Ballard's against the week's news, with a
-link to the story and a question for readers. It sits at the top of the Essays tab and is
-pinned in Threads, and readers reply with their take.
+Quote & prompt of the week has its own tab: an admin posts words of J.G. Ballard's against
+the week's news, with a link to the story and a question. Readers answer in the thread or
+with an essay. It also sits at the top of the Essays tab and is pinned in Threads.
+
+The Essays tab is grouped by theme, each tied to part of his work, and ordered by hand
+inside a theme. Admins arrange it from the account page. Any member can send in an essay;
+writers publish directly, everyone else's essays wait for an admin to publish them.
 
 Sign-in is by emailed link. Signing in with X, or linking an X account afterwards,
 is optional and shows the member's X handle beside their name.

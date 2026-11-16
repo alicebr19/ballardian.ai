@@ -17,4 +17,27 @@ from (values
 ) as v(slug, title, subtitle, kind, external_url, cover_url, source_author, source_name, source_words, source_date)
 where not exists (select 1 from public.essays e where e.slug = v.slug or e.external_url = v.external_url);
 
-select slug, kind, source_name, published_at::date from public.essays order by published_at desc;
+-- Themes for the Essays tab, each tied to part of J.G. Ballard's work, and the first arrangement:
+-- within a theme the two authors alternate where both have written on the subject.
+insert into public.themes (name, blurb, position) values
+  ('Screens, feeds and the performed self', 'What television began and the feed finished. The ground of The Atrocity Exhibition and of his writing on television.', 10),
+  ('Silicon Valley from the inside', 'Closed worlds of work and money, and what they do to the people inside them. The territory of Super-Cannes and Cocaine Nights.', 20),
+  ('The man himself', 'Shepperton, fatherhood and family. The life behind Miracles of Life and The Kindness of Women.', 30)
+on conflict (name) do nothing;
+
+update public.essays e set theme = v.theme, sort_order = v.ord
+from (values
+  ('the-death-of-taste',                                   'Screens, feeds and the performed self', 1),
+  ('how-my-father-jg-ballard-foresaw-our-strange-present', 'Screens, feeds and the performed self', 2),
+  ('experiments-in-virality-and-the-positive',             'Screens, feeds and the performed self', 3),
+  ('the-greatest-tv-show-on-earth',                        'Screens, feeds and the performed self', 4),
+  ('the-transactionality-epidemic-and',                    'Silicon Valley from the inside', 1),
+  ('the-transactionality-epidemic-part',                   'Silicon Valley from the inside', 2),
+  ('the-great-consolidation',                              'Silicon Valley from the inside', 3),
+  ('tessl-startups-you-should-know-about',                 'Silicon Valley from the inside', 4),
+  ('my-dad-the-perfect-mum',                               'The man himself', 1),
+  ('obituary-jg-ballard',                                  'The man himself', 2)
+) as v(slug, theme, ord)
+where e.slug = v.slug and e.theme is null;   -- leaves any later rearrangement alone
+
+select t.position, e.theme, e.sort_order, e.source_author, e.title from public.essays e left join public.themes t on t.name = e.theme order by t.position, e.sort_order;

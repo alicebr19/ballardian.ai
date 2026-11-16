@@ -100,6 +100,21 @@ create table if not exists public.replies (
 );
 create index if not exists replies_thread_idx on public.replies (thread_id, created_at);
 
+-- Essays are grouped on the Essays tab by theme, each tied to a part of J.G. Ballard's work,
+-- and ordered by hand inside a theme. Admins arrange them (see arrange_essay below).
+create table if not exists public.themes (
+  name     text primary key check (char_length(name) between 1 and 80),
+  blurb    text not null default '' check (char_length(blurb) <= 300),
+  position int  not null default 100
+);
+alter table public.essays add column if not exists theme text references public.themes (name) on update cascade on delete set null;
+alter table public.essays add column if not exists sort_order int not null default 1000;
+-- An essay can answer a weekly quote and prompt (a 'weekly' thread).
+alter table public.essays add column if not exists prompt_id uuid references public.threads (id) on delete set null;
+-- Members who are not writers can send an essay in for review ('submitted'); an admin publishes it.
+alter table public.essays drop constraint if exists essays_status_check;
+alter table public.essays add constraint essays_status_check check (status in ('draft','submitted','published'));
+
 -- Optional links a member can show beside their name.
 alter table public.profiles add column if not exists linkedin_url text;
 alter table public.profiles add column if not exists substack_url text;
@@ -172,6 +187,13 @@ begin
      set x_handle  = case when meta is null then null else coalesce(meta->>'user_name', meta->>'preferred_username', meta->>'username') end,
          avatar_url = coalesce(meta->>'avatar_url', meta->>'picture', p.avatar_url)
    where p.id = auth.uid();
+end $$;
+
+create or replace function public.arrange_essay(target uuid, new_theme text, new_order int) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if not public.is_admin() then raise exception 'Only an admin can arrange essays.'; end if;
+  update public.essays set theme = nullif(btrim(coalesce(new_theme, '')), ''), sort_order = coalesce(new_order, 1000) where id = target;
 end $$;
 
 create or replace function public.set_role(target uuid, new_role text) returns void
@@ -261,11 +283,12 @@ create trigger reply_vote_before_write before insert or update on public.reply_v
 -- ---------------------------------------------------------------- privileges
 -- Start from nothing, then grant exactly what the page needs.
 revoke all on public.site_admins, public.profiles, public.essays, public.threads, public.replies,
-              public.thread_votes, public.reply_votes, public.subscribers from anon, authenticated;
+              public.thread_votes, public.reply_votes, public.subscribers, public.themes from anon, authenticated;
 
-grant select on public.profiles, public.essays, public.threads, public.replies to anon, authenticated;
+grant select on public.profiles, public.essays, public.threads, public.replies, public.themes to anon, authenticated;
+grant insert (name, blurb, position), update (name, blurb, position), delete on public.themes to authenticated;   -- limited to admins by the rules below
 grant update (handle, display_name, bio, linkedin_url, substack_url) on public.profiles to authenticated;
-grant insert (slug, title, subtitle, body, status, kind, external_url, cover_url, source_author, source_name, source_words, source_date),
+grant insert (slug, title, subtitle, body, status, kind, external_url, cover_url, source_author, source_name, source_words, source_date, prompt_id),
       update (title, subtitle, body, status, external_url, cover_url, source_author, source_name, source_words, source_date), delete on public.essays to authenticated;
 grant insert (title, body, topic, essay_slug, tweet_url, kind, quote, quote_source, link_url),
       update (title, body, quote, quote_source, link_url), delete on public.threads to authenticated;   -- update is limited to admins by the rule below
@@ -273,8 +296,8 @@ grant insert (thread_id, parent_id, body), delete on public.replies to authentic
 grant select, insert, update, delete on public.thread_votes, public.reply_votes to authenticated;
 grant select on public.subscribers to authenticated;      -- rows limited to admins by the rule below
 
-revoke execute on function public.sync_x(), public.set_role(uuid, text) from public, anon;
-grant execute on function public.sync_x(), public.set_role(uuid, text), public.is_writer(), public.is_admin() to authenticated;
+revoke execute on function public.sync_x(), public.set_role(uuid, text), public.arrange_essay(uuid, text, int) from public, anon;
+grant execute on function public.sync_x(), public.set_role(uuid, text), public.arrange_essay(uuid, text, int), public.is_writer(), public.is_admin() to authenticated;
 grant execute on function public.is_writer(), public.is_admin(), public.subscribe(text) to anon, authenticated;
 
 -- ---------------------------------------------------------------- row-level rules
@@ -286,6 +309,7 @@ alter table public.replies      enable row level security;
 alter table public.thread_votes enable row level security;
 alter table public.reply_votes  enable row level security;
 alter table public.subscribers  enable row level security;
+alter table public.themes       enable row level security;
 
 drop policy if exists "profiles are public" on public.profiles;
 create policy "profiles are public" on public.profiles for select using (true);
@@ -293,11 +317,12 @@ drop policy if exists "edit own profile" on public.profiles;
 create policy "edit own profile" on public.profiles for update to authenticated using (id = auth.uid()) with check (id = auth.uid());
 
 drop policy if exists "read published essays and own drafts" on public.essays;
-create policy "read published essays and own drafts" on public.essays for select using (status = 'published' or author_id = auth.uid());
+create policy "read published essays and own drafts" on public.essays for select using (status = 'published' or author_id = auth.uid() or public.is_admin());
 drop policy if exists "writers add essays" on public.essays;
-create policy "writers add essays" on public.essays for insert to authenticated with check (author_id = auth.uid() and public.is_writer());
+create policy "writers add essays" on public.essays for insert to authenticated with check (author_id = auth.uid() and (public.is_writer() or (kind = 'essay' and status in ('draft','submitted'))));
 drop policy if exists "writers edit own essays" on public.essays;
-create policy "writers edit own essays" on public.essays for update to authenticated using ((author_id = auth.uid() and public.is_writer()) or public.is_admin()) with check (author_id = auth.uid() or public.is_admin());
+create policy "writers edit own essays" on public.essays for update to authenticated using (author_id = auth.uid() or public.is_admin())
+  with check ((author_id = auth.uid() and (public.is_writer() or status in ('draft','submitted'))) or public.is_admin());
 drop policy if exists "remove own essays, admins any" on public.essays;
 create policy "remove own essays, admins any" on public.essays for delete to authenticated using (author_id = auth.uid() or public.is_admin());
 
@@ -325,3 +350,12 @@ create policy "own reply votes" on public.reply_votes for all to authenticated u
 drop policy if exists "admins read subscribers" on public.subscribers;
 create policy "admins read subscribers" on public.subscribers for select to authenticated using (public.is_admin());
 
+
+drop policy if exists "themes are public" on public.themes;
+create policy "themes are public" on public.themes for select using (true);
+drop policy if exists "admins add themes" on public.themes;
+create policy "admins add themes" on public.themes for insert to authenticated with check (public.is_admin());
+drop policy if exists "admins edit themes" on public.themes;
+create policy "admins edit themes" on public.themes for update to authenticated using (public.is_admin()) with check (public.is_admin());
+drop policy if exists "admins remove themes" on public.themes;
+create policy "admins remove themes" on public.themes for delete to authenticated using (public.is_admin());
