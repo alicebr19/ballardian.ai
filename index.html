@@ -238,11 +238,11 @@ select { background: #fff; border: 1.5px solid var(--ink); padding: 5px 8px; fon
  *  row-level rules in schema.sql.
  * ------------------------------------------------------------------ */
 const CONFIG = {
-  supabaseUrl: "",
-  supabaseAnonKey: "",
+  supabaseUrl: "https://qwzxkegvtzotnqzymbwq.supabase.co",
+  supabaseAnonKey: "sb_publishable_ZjB4zPlSTgOMF5GDyuOJEw_j5rhlGLf",   // publishable key: public by design
   xSignIn: false            // set true once the X provider is switched on in Supabase
 };
-const SUPABASE_JS = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js";
+const SUPABASE_JS = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js";
 
 /* ---------- small helpers ---------- */
 function h(tag, attrs, ...kids) {
@@ -414,7 +414,8 @@ async function liveApi() {
   let me = null, session = null, listener = () => {};
   const ok = r => { if (r.error) { const e = new Error(r.error.code === "23505" ? "That one is already taken." : r.error.message || "Something went wrong."); e.code = r.error.code; throw e; } return r.data; };
   const need = () => { if (!me) throw new Error("Sign in first."); return me; };
-  const AUTHOR = "author:profiles(handle,display_name,x_handle,avatar_url)";
+  const author = fk => "author:profiles!" + fk + "(handle,display_name,x_handle,avatar_url)";   // named, because the vote tables also link these tables to profiles
+  const A_ESSAY = author("essays_author_id_fkey"), A_THREAD = author("threads_author_id_fkey"), A_REPLY = author("replies_author_id_fkey");
   async function refresh(s) {
     session = s;
     if (!s) { me = null; listener(); return; }
@@ -448,9 +449,9 @@ async function liveApi() {
       catch (e) { if (e.code === "23505") throw new Error("That handle is taken."); throw e; }
       await refresh(session);
     },
-    async essays() { return ok(await sb.from("essays").select("id,slug,title,subtitle,status,published_at,updated_at,word_count,excerpt,author_id," + AUTHOR).eq("status", "published").order("published_at", { ascending: false }).limit(200)); },
-    async essay(slug) { return ok(await sb.from("essays").select("*," + AUTHOR).eq("slug", slug).maybeSingle()); },
-    async essayById(id) { return ok(await sb.from("essays").select("*," + AUTHOR).eq("id", id).maybeSingle()); },
+    async essays() { return ok(await sb.from("essays").select("id,slug,title,subtitle,status,published_at,updated_at,word_count,excerpt,author_id," + A_ESSAY).eq("status", "published").order("published_at", { ascending: false }).limit(200)); },
+    async essay(slug) { return ok(await sb.from("essays").select("*," + A_ESSAY).eq("slug", slug).maybeSingle()); },
+    async essayById(id) { return ok(await sb.from("essays").select("*," + A_ESSAY).eq("id", id).maybeSingle()); },
     async myEssays() { const p = need(); return ok(await sb.from("essays").select("id,slug,title,subtitle,status,published_at,updated_at,word_count,excerpt,author_id").eq("author_id", p.id).order("updated_at", { ascending: false })); },
     async saveEssay(f) {
       need();
@@ -467,15 +468,15 @@ async function liveApi() {
     },
     async deleteEssay(id) { ok(await sb.from("essays").delete().eq("id", id)); },
     async threads() {
-      const rows = ok(await sb.from("threads").select("id,title,body,topic,essay_slug,score,reply_count,created_at,author_id," + AUTHOR).order("created_at", { ascending: false }).limit(300));
+      const rows = ok(await sb.from("threads").select("id,title,body,topic,essay_slug,score,reply_count,created_at,author_id," + A_THREAD).order("created_at", { ascending: false }).limit(300));
       const mine = {};
       if (me) for (const v of ok(await sb.from("thread_votes").select("thread_id,value").eq("user_id", me.id))) mine[v.thread_id] = v.value;
       return rows.map(t => ({ ...t, my_vote: mine[t.id] || 0 }));
     },
     async thread(id) {
-      const t = ok(await sb.from("threads").select("id,title,body,topic,essay_slug,score,reply_count,created_at,author_id," + AUTHOR).eq("id", id).maybeSingle());
+      const t = ok(await sb.from("threads").select("id,title,body,topic,essay_slug,score,reply_count,created_at,author_id," + A_THREAD).eq("id", id).maybeSingle());
       if (!t) return null;
-      const replies = ok(await sb.from("replies").select("id,thread_id,parent_id,body,score,created_at,author_id," + AUTHOR).eq("thread_id", id).order("created_at", { ascending: true }).limit(2000));
+      const replies = ok(await sb.from("replies").select("id,thread_id,parent_id,body,score,created_at,author_id," + A_REPLY).eq("thread_id", id).order("created_at", { ascending: true }).limit(2000));
       const mine = {}; t.my_vote = 0;
       if (me) {
         const tv = ok(await sb.from("thread_votes").select("value").eq("user_id", me.id).eq("thread_id", id).maybeSingle()); if (tv) t.my_vote = tv.value;
@@ -646,7 +647,7 @@ async function viewThreads() {
         h("p", { class: "meta" }, t.sample ? h("span", { class: "tag sample" }, "Sample") : null, t.topic ? h("button", { class: "tag", type: "button", onclick: () => { state.topic = t.topic; paint(); } }, t.topic) : null, byline(t.author), h("span", null, ago(t.created_at)), h("a", { href: "#thread-" + t.id }, t.reply_count + (t.reply_count === 1 ? " reply" : " replies")))))));
     if (!rows.length) ul.append(h("li", { class: "empty" }, "No threads yet. Start one."));
     sorts.replaceChildren(h("span", { class: "eyebrow" }, "Sort"), ...["hot", "new", "top"].map(s => h("button", { class: "tag" + (state.sort === s ? " on" : ""), type: "button", onclick: () => { state.sort = s; paint(); } }, s)),
-      topics.length ? h("span", { class: "eyebrow", style: "margin-left:10px" }, "Topic") : null, ...topics.map(tp => h("button", { class: "tag" + (state.topic === tp ? " on" : ""), type: "button", onclick: () => { state.topic = state.topic === tp ? null : tp; paint(); } }, tp)));
+      ...(topics.length ? [h("span", { class: "eyebrow", style: "margin-left:10px" }, "Topic")] : []), ...topics.map(tp => h("button", { class: "tag" + (state.topic === tp ? " on" : ""), type: "button", onclick: () => { state.topic = state.topic === tp ? null : tp; paint(); } }, tp)));
   };
   paint();
   const pre = state.prefill; state.prefill = null;
@@ -829,7 +830,7 @@ async function render() {
   try {
     const out = await r.fn();
     if (token !== state.token) return;
-    view.replaceChildren(...[].concat(out));
+    view.replaceChildren(...[].concat(out).filter(Boolean));
   } catch (e) {
     if (token !== state.token) return;
     view.replaceChildren(h("p", { class: "empty" }, "This page could not load. " + (e.message || "")), h("button", { class: "btn", type: "button", onclick: render }, "Try again"));
@@ -843,9 +844,11 @@ window.addEventListener("hashchange", () => { lastHash = location.hash; render()
   try { api = live ? await liveApi() : previewApi(); }
   catch (e) { api = previewApi(); }
   if (api.mode === "preview") { const n = document.getElementById("notice"); n.hidden = false; n.append(h("b", null, "Preview. "), "Accounts open shortly. Until then, anything you post is saved only in this browser."); }
+  const authError = (location.hash.match(/error_description=([^&]+)/) || [])[1];
   try { await api.init(() => render()); } catch (e) {}
-  if (location.hash.includes("access_token=") || location.hash.includes("error_description=")) history.replaceState(null, "", location.pathname + location.search);
-  render();
+  if (location.hash.includes("access_token=") || authError) history.replaceState(null, "", location.pathname + location.search);
+  if (authError) { const n = document.getElementById("notice"); n.hidden = false; n.replaceChildren(h("b", null, "Sign-in did not complete. "), decodeURIComponent(authError.replace(/\+/g, " ")) + ". Ask for a new link from the Sign in tab."); }
+  if (!state.token) render();
 })();
 </script>
 </body>
