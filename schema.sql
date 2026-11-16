@@ -73,6 +73,7 @@ create index if not exists threads_created_idx on public.threads (created_at des
 -- Ballard this week: an admin posts a line of his against the week's news as a special thread
 -- (kind 'weekly'). It carries the quotation, where it is from, and a link to the news story;
 -- the thread's body is the question put to readers, and their takes are ordinary replies.
+alter table public.threads alter column author_id drop not null;   -- the weekly post can be added from the dashboard, with no member account behind it
 alter table public.threads add column if not exists kind text not null default 'thread';
 alter table public.threads drop constraint if exists threads_kind_check;
 alter table public.threads add constraint threads_kind_check check (kind in ('thread','weekly'));

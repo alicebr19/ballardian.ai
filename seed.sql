@@ -41,3 +41,23 @@ from (values
 where e.slug = v.slug and e.theme is null;   -- leaves any later rearrangement alone
 
 select t.position, e.theme, e.sort_order, e.source_author, e.title from public.essays e left join public.themes t on t.name = e.theme order by t.position, e.sort_order;
+
+-- Quote & prompt of the week: the first two posts. Quotations supplied by the estate.
+-- Safe to re-run: a post with the same headline is left alone.
+insert into public.threads (kind, title, quote, quote_source, body, author_id, created_at)
+select 'weekly', v.title, v.quote, v.quote_source, v.body, null, v.created_at::timestamptz
+from (values
+  ('Governed by reason?',
+   $q$The advanced societies of the future will not be governed by reason. They will be driven by irrationality, by competing systems of psychopathology$q$,
+   'letter, 2003',
+   $q$Where did you see this last week? Name one thing in the news that ran on something other than reason.$q$,
+   '2026-11-09T17:00:00Z'),
+  ('Is the future boring?',
+   $q$I would sum up my fear about the future in one word: boring. And that's my one fear: that everything has happened; nothing exciting or new or interesting is ever going to happen again ... the future is just going to be a vast, conforming suburb of the soul$q$,
+   'interview',
+   $q$Was he right? Tell us the last thing that felt new to you.$q$,
+   '2026-11-16T17:00:00Z')
+) as v(title, quote, quote_source, body, created_at)
+where not exists (select 1 from public.threads t where t.kind = 'weekly' and t.title = v.title);
+
+select created_at::date, title, quote_source, left(quote, 50) as quote_start, body from public.threads where kind = 'weekly' order by created_at desc;
